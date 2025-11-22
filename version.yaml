@@ -1,0 +1,9 @@
+# Version information for Conalyz CLI
+version: 0.1.0-beta
+build_number: 1
+date: 2025-09-14
+changelog:
+  - Initial beta release with core accessibility analysis features
+  - Added support for Material and Cupertino widgets
+  - HTML and JSON report generation
+  - Command line interface with filtering options
