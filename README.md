@@ -1,181 +1,140 @@
-# Flutter Accessibility Advisor CLI (Beta)
+# Conalyz
 
-> ⚠️ **Beta Notice**: This is a beta version of the Flutter Accessibility Advisor CLI. 
-> Please report any issues or feedback to our team.
+A powerful command-line tool for analyzing Flutter applications for accessibility issues. Conalyz uses AST-based analysis to provide comprehensive accessibility checks for both Material and Cupertino widgets, helping developers ensure their Flutter applications are accessible to all users.
 
-A powerful command-line tool for analyzing Flutter applications for accessibility issues. This tool helps developers ensure their Flutter applications are accessible to all users by checking against WCAG (Web Content Accessibility Guidelines) standards.
+## Features
 
-## 🚀 Getting Started (Beta Users)
+- **AST-based Analysis**: Fast and accurate analysis using Abstract Syntax Tree parsing
+- **Comprehensive Widget Coverage**: Supports Material, Cupertino, and custom widgets
+- **Multi-Platform Support**: Analyze for mobile and web platforms
+- **Interactive Reports**: Generate HTML reports with filtering and detailed issue information
+- **JSON Export**: Export results for CI/CD integration
+- **Usage Tracking**: Track your analysis statistics and productivity insights
+- **WCAG Compliance**: Validates against Web Content Accessibility Guidelines
 
-### Prerequisites
-- macOS (Intel or Apple Silicon)
-- Flutter SDK (if analyzing Flutter projects)
+## Installation
 
-### Installation
+Add Conalyz as a global package:
 
-1. Download the latest binary from the beta release
-2. Make it executable:
-   ```bash
-   chmod +x conalyz
-   ```
-3. Move to a directory in your PATH:
-   ```bash
-   # Create ~/bin if it doesn't exist
-   mkdir -p ~/bin
-   
-   # Move the binary
-   mv conalyz ~/bin/
-   
-   # Add to PATH (if not already added)
-   echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
-   source ~/.zshrc
-   ```
-4. Verify installation by running:
-   ```bash
-   conalyz --help
-   ```
+```bash
+dart pub global activate conalyz
+```
 
-## ⚡ Quick Start
+Make sure your PATH includes the pub cache bin directory. Add this to your shell profile if needed:
 
-1. Navigate to your Flutter project:
-   ```bash
-   cd /path/to/your/flutter/project
-   ```
-2. Run the analyzer:
-   ```bash
-   conalyz -p ./lib
-   ```
-3. Open the HTML report:
-   ```bash
-   open accessibility_report/accessibility_report.html
-   ```
+```bash
+export PATH="$PATH":"$HOME/.pub-cache/bin"
+```
 
-## 🔍 Key Features
+## Quick Start
 
-- **Lightning-fast** analysis using AST parsing
-- **Interactive HTML reports** with filtering
-- **JSON output** for CI/CD integration
-- **Comprehensive checks** for both Material and Cupertino widgets
-- **Detailed suggestions** for fixing issues
+Navigate to your Flutter project and run:
 
-## 🛠 Usage Guide
+```bash
+conalyz --path ./lib
+```
+
+Open the generated HTML report:
+
+```bash
+open accessibility_report/accessibility_report.html
+```
+
+## Usage
 
 ### Basic Commands
 
 ```bash
 # Analyze a Flutter project
-conalyz -p /path/to/your/flutter/project/lib
+conalyz --path /path/to/your/flutter/project/lib
 
-# Specify custom output directory
-conalyz -p ./lib -o ./reports
+# Analyze a specific Dart file
+conalyz --path lib/main.dart
 
-# Analyze specific files only
-conalyz -f lib/main.dart lib/screens/home_screen.dart
+# Analyze for web platform
+conalyz --path ./lib --platform web
 
-# Set minimum severity level (critical, high, medium, low)
-conalyz -p ./lib --min-severity high
+# Custom output directory
+conalyz --path ./lib --output ./reports
+
+# View usage statistics
+conalyz usage
+
+# View detailed usage analytics
+conalyz usage --detailed
 ```
 
 ### Command Line Options
 
-| Option | Alias | Description |
-|--------|-------|-------------|
-| `--path` | `-p` | Path to Flutter project's lib directory |
-| `--file` | `-f` | Analyze specific files (can specify multiple) |
-| `--output` | `-o` | Output directory (default: `accessibility_report`) |
-| `--format` | `-f` | Output format: `html`, `json`, or `all` |
-| `--min-severity` | `-s` | Minimum severity level to report |
-| `--exclude` | `-e` | Exclude files/directories (comma-separated) |
-| `--help` | `-h` | Show help message |
+**Analysis Options:**
+- `--path, -p`: Path to Flutter project directory or Dart file (required)
+- `--platform, -t`: Target platform: `mobile` or `web` (default: `mobile`)
+- `--output, -o`: Output directory for reports (default: `accessibility_report`)
+- `--json`: Generate JSON report (default: `true`)
+- `--html`: Generate HTML report (default: `true`)
+- `--debug`: Enable debug output for troubleshooting
+- `--version, -v`: Show version information
+- `--help, -h`: Show help message
 
-### Common Examples
-
+**Usage Command:**
 ```bash
-# Basic analysis with default settings
-conalyz -p ./lib
-
-# Generate JSON report for CI/CD
-conalyz -p ./lib --format json
-
-# Only check for critical/high issues
-conalyz -p ./lib --min-severity high
-
-# Exclude generated files
-conalyz -p ./lib --exclude "**/*.g.dart,**/generated/**"
+conalyz usage [--detailed]
 ```
 
-## 📊 Understanding the Reports
+## Reports
 
 ### HTML Report
 
-After running the analysis, open `accessibility_report/accessibility_report.html` in your browser to view an interactive report that includes:
-
-- **Summary Dashboard**: Quick overview of issues by severity
-- **Filtering**: Narrow down issues by type and severity
-- **Detailed Issue View**: 
-  - Exact file locations with clickable links
-  - Code snippets showing the issue
-  - WCAG compliance information
-  - Step-by-step fixes
+The HTML report provides:
+- Summary dashboard with issue counts by severity
+- Interactive filtering by type and severity
+- Detailed issue view with file locations and code snippets
+- WCAG compliance information
+- Step-by-step fix suggestions
 
 ### JSON Report
 
-For programmatic use, check `accessibility_report/accessibility_report.json`:
+The JSON report includes:
+- Summary statistics (total issues, severity breakdown, files analyzed)
+- Detailed issue list with file locations, line numbers, and suggestions
+- Analysis metadata (time, platform, lines scanned)
 
-```json
-{
-  "summary": {
-    "total_issues": 8,
-    "critical": 2,
-    "high": 3,
-    "medium": 2,
-    "low": 1,
-    "files_analyzed": 12,
-    "analysis_time_seconds": 1.23
-  },
-  "issues": [
-    {
-      "type": "MissingSemanticsLabel",
-      "severity": "high",
-      "file": "lib/screens/home_screen.dart",
-      "line": 42,
-      "message": "Icon is missing a semantic label",
-      "suggestion": "Add a semantic label for screen readers"
-    }
-  ]
-}
+## Examples
+
+```bash
+# Basic analysis
+conalyz --path ./lib
+
+# Analyze for web with custom output
+conalyz --path ./lib --platform web --output ./web-reports
+
+# Analyze single file with debug output
+conalyz --path lib/screens/home_screen.dart --debug
+
+# Check your usage statistics
+conalyz usage --detailed
 ```
 
-## 🔧 Troubleshooting
+## Accessibility Checks
 
-### Common Issues
+Conalyz checks for:
+- Missing semantic labels on interactive widgets
+- Insufficient color contrast
+- Missing tooltips on icon buttons
+- Inaccessible gesture detectors
+- Form field accessibility issues
+- Image accessibility (alt text)
+- Focus management issues
+- And many more...
 
-1. **Command not found**
-   - Make sure the binary is in your PATH
-   - Try using `./conalyz` if in the same directory
+## Contributing
 
-2. **Permission denied**
-   ```bash
-   chmod +x conalyz
-   ```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-3. **No issues found**
-   - Verify you're analyzing the correct directory
-   - Check file permissions
-   - Run with `--verbose` for more details
+## License
 
-## 📝 Feedback
+MIT License - see LICENSE file for details
 
-This is a beta release. Please report any issues or suggestions to:
-- Email: your-email@example.com
-- GitHub: [Issues](https://github.com/yourusername/flutter-access-advisor/issues)
+## Support
 
-## 📜 License
-
-© 2025 Flutter Accessibility Team. All rights reserved.
-
----
-
-Thank you for helping us improve Flutter accessibility! 🎉
-
-
+For issues and feature requests, please visit our [issue tracker](https://github.com/yourusername/conalyz/issues).

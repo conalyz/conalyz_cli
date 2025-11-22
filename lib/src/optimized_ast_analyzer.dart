@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:flutter/material.dart';
 import 'flutter_specific_rules.dart';
+import 'line_counter_service.dart';
 import 'platform_type.dart';
 
 class AccessibilityIssue {
@@ -173,7 +174,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
     }
 
     if (_enableDebugOutput) {
-      debugPrint('Initialized ${_rules.length} Flutter accessibility rules');
+      print('Initialized ${_rules.length} Flutter accessibility rules');
     }
   }
 
@@ -191,7 +192,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
     _issueIdCounter = 1;
 
     if (_enableDebugOutput) {
-      debugPrint('Analyzing single file: $filePath');
+      print('Analyzing single file: $filePath');
     }
 
     // Process the single file
@@ -233,7 +234,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
     final dartFiles = await _findDartFiles(projectPath);
 
     if (_enableDebugOutput) {
-      debugPrint('Found ${dartFiles.length} Dart files to analyze');
+      print('Found ${dartFiles.length} Dart files to analyze');
     }
 
     // Process files in parallel for better performance
@@ -281,8 +282,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       if (dartFiles.length > 20 && (i + 1) % 20 == 0) {
         final progress =
             ((i + 1) / dartFiles.length * 100).clamp(0, 100).toInt();
-        debugPrint(
-            '📊 Processing: ${i + 1}/${dartFiles.length} files (${progress}%)');
+        print('📊 Processing: ${i + 1}/${dartFiles.length} files ($progress%)');
       }
 
       // Add timeout to prevent getting stuck on problematic files
@@ -290,7 +290,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
         final result = await _processFileWithTimeout(filePath, platform);
         results.add(result);
       } catch (e) {
-        debugPrint('⚠️  Error processing file $filePath, skipping');
+        print('⚠️  Error processing file $filePath, skipping');
         results.add(FileAnalysisResult(
           issues: [],
           analyzedFiles: [filePath],
@@ -312,7 +312,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       if (fileSize > 100000) {
         // Skip files larger than 100KB
         if (_enableDebugOutput) {
-          debugPrint(
+          print(
               '⏭️  Skipping large file: ${filePath.split('/').last} (${(fileSize / 1024).toStringAsFixed(1)}KB)');
         }
         return FileAnalysisResult(
@@ -330,7 +330,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       // Skip files with too many lines that might cause performance issues
       // if (linesScanned > 1500) {
       //   if (_enableDebugOutput) {
-      //     debugPrint('⏭️  Skipping large file: ${filePath.split('/').last} ($linesScanned lines)');
+      //     print('⏭️  Skipping large file: ${filePath.split('/').last} ($linesScanned lines)');
       //   }
       //   return FileAnalysisResult(
       //     issues: [],
@@ -340,9 +340,9 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       // }
 
       if (_enableDebugOutput) {
-        debugPrint(
+        print(
             '📝 Processing: ${filePath.split('/').last} ($linesScanned lines)');
-        debugPrint('🔍 Parsing AST...');
+        print('🔍 Parsing AST...');
       }
 
       // Parse the file into AST
@@ -353,14 +353,14 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       );
 
       if (_enableDebugOutput) {
-        debugPrint('✅ AST parsed successfully');
+        print('✅ AST parsed successfully');
       }
 
       if (parseResult.errors.isNotEmpty) {
         if (_enableDebugOutput) {
-          debugPrint('Warning: Parse errors in $filePath:');
+          print('Warning: Parse errors in $filePath:');
           for (final error in parseResult.errors) {
-            debugPrint('  ${error.message}');
+            print('  ${error.message}');
           }
         }
         return FileAnalysisResult(
@@ -371,39 +371,39 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       }
 
       if (_enableDebugOutput) {
-        debugPrint('Parsed successfully, unit: ${parseResult.unit}');
+        print('Parsed successfully, unit: ${parseResult.unit}');
       }
 
       // Extract widget information from AST with optimized visitor
       if (_enableDebugOutput) {
-        debugPrint('🔍 Creating visitor...');
-        debugPrint('🔍 Building parent map...');
+        print('🔍 Creating visitor...');
+        print('🔍 Building parent map...');
       }
       final visitor = OptimizedWidgetExtractionVisitor(
           content, parseResult.unit, _enableDebugOutput);
       visitor.buildParentMap(parseResult.unit);
 
       if (_enableDebugOutput) {
-        debugPrint('✅ Parent map built');
-        debugPrint('🔍 Visiting AST...');
+        print('✅ Parent map built');
+        print('🔍 Visiting AST...');
       }
 
       parseResult.unit.visitChildren(visitor);
 
       if (_enableDebugOutput) {
-        debugPrint('✅ AST visit completed');
-        debugPrint('📊 Found ${visitor.widgets.length} widgets');
+        print('✅ AST visit completed');
+        print('📊 Found ${visitor.widgets.length} widgets');
       }
 
       // Apply accessibility rules to each widget with optimized rule matching
       if (_enableDebugOutput) {
-        debugPrint('🔍 Applying rules to ${visitor.widgets.length} widgets...');
+        print('🔍 Applying rules to ${visitor.widgets.length} widgets...');
       }
       final issues = <AccessibilityIssue>[];
       for (int i = 0; i < visitor.widgets.length; i++) {
         final widget = visitor.widgets[i];
         if (_enableDebugOutput && i % 10 == 0) {
-          debugPrint(
+          print(
               '  Processing widget ${i + 1}/${visitor.widgets.length}: ${widget.type}');
         }
 
@@ -427,7 +427,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
         }
       }
       if (_enableDebugOutput) {
-        debugPrint('✅ Rules applied, found ${issues.length} issues');
+        print('✅ Rules applied, found ${issues.length} issues');
       }
 
       return FileAnalysisResult(
@@ -437,7 +437,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       );
     } catch (e) {
       if (_enableDebugOutput) {
-        debugPrint('Error analyzing file $filePath: $e');
+        print('Error analyzing file $filePath: $e');
       }
       return FileAnalysisResult(
         issues: [],
@@ -455,7 +455,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
         Duration(seconds: 5), // 5 second timeout per file
         onTimeout: () {
           if (_enableDebugOutput) {
-            debugPrint('⏰ Timeout processing file: ${filePath.split('/').last}');
+            print('⏰ Timeout processing file: ${filePath.split('/').last}');
           }
           return FileAnalysisResult(
             issues: [],
@@ -466,7 +466,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       );
     } catch (e) {
       if (_enableDebugOutput) {
-        debugPrint('❌ Error processing file ${filePath.split('/').last}: $e');
+        print('❌ Error processing file ${filePath.split('/').last}: $e');
       }
       return FileAnalysisResult(
         issues: [],
@@ -551,7 +551,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
       final arguments = node.argumentList.arguments;
       final maxArgs = arguments.length > 20 ? 20 : arguments.length;
       for (int i = 0; i < maxArgs; i++) {
-        final arg = arguments[i] as AstNode;
+        final arg = arguments[i];
         _buildParentMapRecursive(arg, node, depth + 1);
       }
     }
@@ -560,8 +560,10 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     final children = node.childEntities.toList();
     final maxChildren = children.length > 100 ? 100 : children.length;
     for (int i = 0; i < maxChildren; i++) {
-      final child = children[i] as AstNode;
-      _buildParentMapRecursive(child, node, depth + 1);
+      final child = children[i];
+      if (child is AstNode) {
+        _buildParentMapRecursive(child, node, depth + 1);
+      }
     }
   }
 
@@ -570,8 +572,10 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     _trackParentChild(node);
 
     // Extract constructor name more efficiently
-    final namedType = node.constructorName.type;
-    final constructorName = namedType.name2.lexeme;
+    String constructorName;
+    final type = node.constructorName.type;
+
+    constructorName = type.name2.lexeme ?? type.toString();
 
     // Handle named constructors
     String fullConstructorName = constructorName;
@@ -581,18 +585,18 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     }
 
     if (_enableDebugOutput) {
-      debugPrint('Found constructor: $fullConstructorName');
+      print('Found constructor: $fullConstructorName');
     }
 
     // Check if this is a Flutter widget with optimized lookup
     if (_isFlutterWidget(constructorName) ||
         _isFlutterWidget(fullConstructorName)) {
       if (_enableDebugOutput) {
-        debugPrint('  -> Identified as Flutter widget');
+        print('  -> Identified as Flutter widget');
       }
       _addWidget(constructorName, node, node.argumentList.arguments);
     } else if (_enableDebugOutput) {
-      debugPrint('  -> NOT a Flutter widget (filtered out)');
+      print('  -> NOT a Flutter widget (filtered out)');
     }
 
     super.visitInstanceCreationExpression(node);
@@ -604,7 +608,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
     final methodName = node.methodName.name;
     if (_enableDebugOutput) {
-      debugPrint('Found method invocation: $methodName');
+      print('Found method invocation: $methodName');
     }
 
     // Handle named constructors like Image.asset(), Image.network()
@@ -614,13 +618,13 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
       final fullName = '$targetType.$methodName';
 
       if (_enableDebugOutput) {
-        debugPrint('  Full method name: $fullName');
+        print('  Full method name: $fullName');
       }
 
       // Check if this is a Flutter widget constructor
       if (_isFlutterWidget(targetType)) {
         if (_enableDebugOutput) {
-          debugPrint('  -> Identified as Flutter widget named constructor');
+          print('  -> Identified as Flutter widget named constructor');
         }
         _addWidget(targetType, node, node.argumentList.arguments);
         super.visitMethodInvocation(node);
@@ -631,11 +635,11 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     // Many Flutter widgets appear as method invocations
     if (_isFlutterWidget(methodName)) {
       if (_enableDebugOutput) {
-        debugPrint('  -> Identified as Flutter widget (method invocation)');
+        print('  -> Identified as Flutter widget (method invocation)');
       }
       _addWidget(methodName, node, node.argumentList.arguments);
     } else if (_enableDebugOutput) {
-      debugPrint('  -> NOT a Flutter widget (filtered out)');
+      print('  -> NOT a Flutter widget (filtered out)');
     }
 
     super.visitMethodInvocation(node);
@@ -644,7 +648,9 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   void _trackParentChild(AstNode node) {
     // Track parent-child relationships more efficiently
     for (final child in node.childEntities) {
-      _parentMap[child as AstNode] = node;
+      if (child is AstNode) {
+        _parentMap[child] = node;
+      }
     }
   }
 
@@ -662,7 +668,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
         final value = _extractArgumentValue(arg.expression);
         properties[name] = value;
         if (_enableDebugOutput) {
-          debugPrint('    Property: $name = $value');
+          print('    Property: $name = $value');
         }
       }
     }
@@ -681,7 +687,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     ));
 
     if (_enableDebugOutput) {
-      debugPrint('    Added widget: $widgetType at line ${location.lineNumber}');
+      print('    Added widget: $widgetType at line ${location.lineNumber}');
     }
   }
 

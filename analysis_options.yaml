@@ -1,4 +1,23 @@
-include: package:flutter_lints/flutter.yaml
+include: package:lints/recommended.yaml
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+
+analyzer:
+  exclude:
+    - build/**
+    - .dart_tool/**
+
+linter:
+  rules:
+    - avoid_print: false  # CLI tool uses print for output
+    - prefer_single_quotes: true
+    - always_declare_return_types: true
+    - avoid_empty_else: true
+    - avoid_relative_lib_imports: true
+    - cancel_subscriptions: true
+    - close_sinks: true
+    - prefer_const_constructors: true
+    - prefer_final_fields: true
+    - unnecessary_null_in_if_null_operators: true
+    - use_key_in_widget_constructors: false

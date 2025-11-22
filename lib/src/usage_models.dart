@@ -1,8 +1,6 @@
-
-
 /// Represents a single usage record for an analysis session
 /// Maximum number of files that can be analyzed per day
-const int dailyFileLimit = 100;
+// const int dailyFileLimit = 100; // Unlimited for now
 
 class UsageRecord {
   final DateTime timestamp;
@@ -118,7 +116,8 @@ class UsageStatistics {
     final sortedRecords = List<UsageRecord>.from(records)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-    final totalLines = records.fold<int>(0, (sum, record) => sum + record.linesScanned);
+    final totalLines =
+        records.fold<int>(0, (sum, record) => sum + record.linesScanned);
     final totalSessions = records.length;
     final averageLines = totalSessions > 0 ? totalLines / totalSessions : 0.0;
 
@@ -139,19 +138,21 @@ class UsageStatistics {
   factory UsageStatistics.fromJson(Map<String, dynamic> json) {
     final recentSessionsJson = json['recentSessions'] as List<dynamic>? ?? [];
     final recentSessions = recentSessionsJson
-        .map((sessionJson) => UsageRecord.fromJson(sessionJson as Map<String, dynamic>))
+        .map((sessionJson) =>
+            UsageRecord.fromJson(sessionJson as Map<String, dynamic>))
         .toList();
 
     return UsageStatistics(
       totalLinesScanned: json['totalLinesScanned'] as int,
       totalSessions: json['totalSessions'] as int,
-      firstUsage: json['firstUsage'] != null 
-          ? DateTime.parse(json['firstUsage'] as String) 
+      firstUsage: json['firstUsage'] != null
+          ? DateTime.parse(json['firstUsage'] as String)
           : null,
-      lastUsage: json['lastUsage'] != null 
-          ? DateTime.parse(json['lastUsage'] as String) 
+      lastUsage: json['lastUsage'] != null
+          ? DateTime.parse(json['lastUsage'] as String)
           : null,
-      averageLinesPerSession: (json['averageLinesPerSession'] as num).toDouble(),
+      averageLinesPerSession:
+          (json['averageLinesPerSession'] as num).toDouble(),
       recentSessions: recentSessions,
     );
   }
@@ -164,7 +165,8 @@ class UsageStatistics {
       'firstUsage': firstUsage?.toIso8601String(),
       'lastUsage': lastUsage?.toIso8601String(),
       'averageLinesPerSession': averageLinesPerSession,
-      'recentSessions': recentSessions.map((session) => session.toJson()).toList(),
+      'recentSessions':
+          recentSessions.map((session) => session.toJson()).toList(),
     };
   }
 
@@ -202,12 +204,14 @@ class UsageStatistics {
 
   /// Gets the total number of files analyzed across all sessions
   int get totalFilesAnalyzed {
-    return recentSessions.fold<int>(0, (sum, record) => sum + record.filesAnalyzed);
+    return recentSessions.fold<int>(
+        0, (sum, record) => sum + record.filesAnalyzed);
   }
 
   /// Gets the total analysis time in milliseconds across all sessions
   int get totalAnalysisTimeMs {
-    return recentSessions.fold<int>(0, (sum, record) => sum + record.analysisTimeMs);
+    return recentSessions.fold<int>(
+        0, (sum, record) => sum + record.analysisTimeMs);
   }
 
   /// Gets the average analysis time per session in milliseconds
@@ -226,7 +230,8 @@ class UsageStatistics {
   Map<String, int> get usageByPlatform {
     final platformStats = <String, int>{};
     for (final record in recentSessions) {
-      platformStats[record.platform] = (platformStats[record.platform] ?? 0) + record.linesScanned;
+      platformStats[record.platform] =
+          (platformStats[record.platform] ?? 0) + record.linesScanned;
     }
     return platformStats;
   }
@@ -234,27 +239,29 @@ class UsageStatistics {
   /// Gets the most productive day (day with most lines scanned)
   DateTime? get mostProductiveDay {
     if (recentSessions.isEmpty) return null;
-    
+
     final dailyStats = <String, int>{};
     for (final record in recentSessions) {
-      final dayKey = '${record.timestamp.year}-${record.timestamp.month.toString().padLeft(2, '0')}-${record.timestamp.day.toString().padLeft(2, '0')}';
+      final dayKey =
+          '${record.timestamp.year}-${record.timestamp.month.toString().padLeft(2, '0')}-${record.timestamp.day.toString().padLeft(2, '0')}';
       dailyStats[dayKey] = (dailyStats[dayKey] ?? 0) + record.linesScanned;
     }
-    
+
     if (dailyStats.isEmpty) return null;
-    
-    final mostProductiveDayKey = dailyStats.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
-    
+
+    final mostProductiveDayKey =
+        dailyStats.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+
     final parts = mostProductiveDayKey.split('-');
-    return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    return DateTime(
+        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
   }
 
   /// Gets the largest single analysis session (by lines scanned)
   UsageRecord? get largestSession {
     if (recentSessions.isEmpty) return null;
-    return recentSessions.reduce((a, b) => a.linesScanned > b.linesScanned ? a : b);
+    return recentSessions
+        .reduce((a, b) => a.linesScanned > b.linesScanned ? a : b);
   }
 
   /// Gets usage statistics for the last N days
@@ -263,7 +270,7 @@ class UsageStatistics {
     final recentRecords = recentSessions
         .where((record) => record.timestamp.isAfter(cutoffDate))
         .toList();
-    
+
     return UsageStatistics.fromRecords(recentRecords);
   }
 
@@ -295,7 +302,8 @@ class UsageStorageData {
   factory UsageStorageData.fromJson(Map<String, dynamic> json) {
     final recordsJson = json['records'] as List<dynamic>? ?? [];
     final records = recordsJson
-        .map((recordJson) => UsageRecord.fromJson(recordJson as Map<String, dynamic>))
+        .map((recordJson) =>
+            UsageRecord.fromJson(recordJson as Map<String, dynamic>))
         .toList();
 
     final metadata = json['metadata'] as Map<String, dynamic>? ?? {};
@@ -303,10 +311,10 @@ class UsageStorageData {
     return UsageStorageData(
       version: json['version'] as String? ?? '1.0',
       records: records,
-      created: metadata['created'] != null 
+      created: metadata['created'] != null
           ? DateTime.parse(metadata['created'] as String)
           : DateTime.now(),
-      lastUpdated: metadata['lastUpdated'] != null 
+      lastUpdated: metadata['lastUpdated'] != null
           ? DateTime.parse(metadata['lastUpdated'] as String)
           : DateTime.now(),
     );

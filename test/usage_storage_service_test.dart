@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_access_advisor_cli/src/usage_storage_service.dart';
-import 'package:flutter_access_advisor_cli/src/usage_models.dart';
+import 'package:test/test.dart';
+import 'package:conalyz/src/usage_storage_service.dart';
+import 'package:conalyz/src/usage_models.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -189,41 +189,40 @@ void main() {
     });
 
     group('Daily Limit Checking', () {
-      test('should allow analysis within daily limit', () async {
+      test('should allow unlimited analysis (daily limit disabled)', () async {
         await service.initializeStorage();
         
         final result = await service.checkDailyLimit(50);
-        expect(result, isNull); // Should allow analysis
+        expect(result, isNull); // Should always allow analysis (unlimited)
       });
 
-      test('should block analysis when daily limit exceeded', () async {
+      test('should allow analysis even with many files (unlimited)', () async {
         await service.initializeStorage();
         
-        // Add records that exceed the daily limit
+        // Add many records
         final today = DateTime.now();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
           final record = UsageRecord(
             timestamp: today.subtract(Duration(hours: i)),
             linesScanned: 1000,
             projectPath: '/test/project$i',
             platform: 'mobile',
             analysisTimeMs: 2000,
-            filesAnalyzed: 50, // Each record has 50 files
+            filesAnalyzed: 100, // Many files
             analysisDate: today,
           );
           await service.recordUsage(record);
         }
         
-        // This should exceed the daily limit (assuming dailyFileLimit is 200)
-        final result = await service.checkDailyLimit(10);
-        expect(result, isNotNull);
-        expect(result, contains('Daily file analysis limit'));
+        // Should still allow analysis (unlimited)
+        final result = await service.checkDailyLimit(1000);
+        expect(result, isNull); // Should allow unlimited analysis
       });
 
-      test('should reset daily limit for new day', () async {
+      test('should allow analysis on any day (unlimited)', () async {
         await service.initializeStorage();
         
-        // Add records from yesterday that would exceed limit
+        // Add records from yesterday
         final yesterday = DateTime.now().subtract(const Duration(days: 1));
         for (int i = 0; i < 5; i++) {
           final record = UsageRecord(
@@ -238,9 +237,9 @@ void main() {
           await service.recordUsage(record);
         }
         
-        // Today should allow new analysis
+        // Should allow analysis (unlimited)
         final result = await service.checkDailyLimit(50);
-        expect(result, isNull); // Should allow analysis for new day
+        expect(result, isNull); // Should allow unlimited analysis
       });
     });
 

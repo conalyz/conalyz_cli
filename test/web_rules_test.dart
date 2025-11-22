@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_access_advisor_cli/src/web_rules.dart';
-import 'package:flutter_access_advisor_cli/src/optimized_ast_analyzer.dart' show WidgetInfo, OptimizedWidgetExtractionVisitor;
-import 'package:flutter_access_advisor_cli/src/platform_type.dart';
+import 'package:test/test.dart';
+import 'package:conalyz/src/web_rules.dart';
+import 'package:conalyz/src/optimized_ast_analyzer.dart' show WidgetInfo, OptimizedWidgetExtractionVisitor;
+import 'package:conalyz/src/platform_type.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 

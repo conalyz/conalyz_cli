@@ -1,0 +1,31 @@
+# Build artifacts
+build/
+.dart_tool/
+
+# Test coverage
+coverage/
+
+# Generated reports
+accessibility_report/
+
+# Distribution files
+conalyz.zip
+conalyz/
+
+# Scripts
+run_tests.sh
+
+# Old binaries
+bin/flutter_access_advisor_ast.dart
+bin/flutter_access_advisor_cli.dart
+
+# Version file (no longer used)
+version.yaml
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# macOS
+.DS_Store

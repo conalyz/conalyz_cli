@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:intl/intl.dart';
-import 'package:flutter_access_advisor_cli/src/usage_storage_service.dart';
+import 'package:conalyz/src/usage_storage_service.dart';
 
 /// Command handler for usage-related operations
 class UsageCommand {

@@ -7,7 +7,7 @@ extension DateOnlyCompare on DateTime {
   bool isSameDate(DateTime other) {
     return year == other.year && month == other.month && day == other.day;
   }
-  
+
   DateTime get dateOnly => DateTime(year, month, day);
 }
 
@@ -30,14 +30,14 @@ class StorageException implements Exception {
 
 /// Custom exception for storage corruption
 class StorageCorruptionException extends StorageException {
-  const StorageCorruptionException(String message, {String? filePath, Exception? cause})
-      : super(message, filePath: filePath, cause: cause);
+  const StorageCorruptionException(super.message,
+      {super.filePath, super.cause});
 }
 
 /// Custom exception for permission issues
 class StoragePermissionException extends StorageException {
-  const StoragePermissionException(String message, {String? filePath, Exception? cause})
-      : super(message, filePath: filePath, cause: cause);
+  const StoragePermissionException(super.message,
+      {super.filePath, super.cause});
 }
 
 /// Service for managing local storage of usage statistics
@@ -59,7 +59,12 @@ class UsageStorageService {
 
   /// Checks if the daily file limit has been reached
   /// Returns null if the limit hasn't been reached, otherwise returns an error message
+  /// NOTE: Daily limit is currently disabled (unlimited)
   Future<String?> checkDailyLimit(int filesToAnalyze) async {
+    // Daily limit disabled for now - unlimited analysis
+    return null;
+
+    /* Commented out for unlimited analysis
     try {
       final storageData = await _loadStorageData();
       final today = DateTime.now().dateOnly;
@@ -79,6 +84,7 @@ class UsageStorageService {
       _logWarning('Error checking daily limit: $e');
       return null;
     }
+    */
   }
 
   /// Records a new usage session
@@ -90,7 +96,8 @@ class UsageStorageService {
         await _saveStorageDataWithRetry(updatedData);
         return; // Success, exit retry loop
       } on StoragePermissionException catch (e) {
-        _logWarning('Permission error recording usage data (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Permission error recording usage data (attempt $attempt/$_maxRetryAttempts): $e');
         if (attempt == _maxRetryAttempts) {
           await _tryFallbackStorageLocation();
           // Try one more time with fallback location
@@ -100,21 +107,25 @@ class UsageStorageService {
             await _saveStorageDataWithRetry(updatedData);
             return;
           } catch (_) {
-            _logWarning('Failed to record usage data even with fallback location');
+            _logWarning(
+                'Failed to record usage data even with fallback location');
             return; // Give up gracefully
           }
         }
         await _delayRetry(attempt);
       } on StorageCorruptionException catch (e) {
-        _logWarning('Storage corruption detected (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Storage corruption detected (attempt $attempt/$_maxRetryAttempts): $e');
         await _handleStorageCorruption();
         if (attempt == _maxRetryAttempts) {
-          _logWarning('Failed to recover from storage corruption after $attempt attempts');
+          _logWarning(
+              'Failed to recover from storage corruption after $attempt attempts');
           return; // Give up gracefully
         }
         await _delayRetry(attempt);
       } catch (e) {
-        _logWarning('Unexpected error recording usage data (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Unexpected error recording usage data (attempt $attempt/$_maxRetryAttempts): $e');
         if (attempt == _maxRetryAttempts) {
           _logWarning('Failed to record usage data after $attempt attempts');
           return; // Give up gracefully - analysis should continue
@@ -131,15 +142,18 @@ class UsageStorageService {
         final storageData = await _loadStorageDataWithRecovery();
         return UsageStatistics.fromRecords(storageData.records);
       } on StorageCorruptionException catch (e) {
-        _logWarning('Storage corruption detected while loading statistics (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Storage corruption detected while loading statistics (attempt $attempt/$_maxRetryAttempts): $e');
         await _handleStorageCorruption();
         if (attempt == _maxRetryAttempts) {
-          _logWarning('Failed to recover statistics after $attempt attempts, returning empty statistics');
+          _logWarning(
+              'Failed to recover statistics after $attempt attempts, returning empty statistics');
           break;
         }
         await _delayRetry(attempt);
       } on StoragePermissionException catch (e) {
-        _logWarning('Permission error loading statistics (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Permission error loading statistics (attempt $attempt/$_maxRetryAttempts): $e');
         if (attempt == _maxRetryAttempts) {
           await _tryFallbackStorageLocation();
           // Try one more time with fallback
@@ -147,13 +161,15 @@ class UsageStorageService {
             final storageData = await _loadStorageDataWithRecovery();
             return UsageStatistics.fromRecords(storageData.records);
           } catch (_) {
-            _logWarning('Failed to load statistics even with fallback location');
+            _logWarning(
+                'Failed to load statistics even with fallback location');
             break;
           }
         }
         await _delayRetry(attempt);
       } catch (e) {
-        _logWarning('Unexpected error loading statistics (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Unexpected error loading statistics (attempt $attempt/$_maxRetryAttempts): $e');
         if (attempt == _maxRetryAttempts) {
           _logWarning('Failed to load statistics after $attempt attempts');
           break;
@@ -187,27 +203,29 @@ class UsageStorageService {
     }
 
     final fallbackLocations = await _getFallbackStorageLocations();
-    
+
     for (final location in fallbackLocations) {
       if (_attemptedPaths.contains(location)) {
         continue; // Skip already attempted paths
       }
-      
+
       _attemptedPaths.add(location);
-      
+
       try {
         if (await _canUseStorageLocationWithRecovery(path.dirname(location))) {
           _cachedStorageFilePath = location;
           return location;
         }
       } catch (e) {
-        _logWarning('Storage location unavailable: ${e.toString().split(':').first}');
+        _logWarning(
+            'Storage location unavailable: ${e.toString().split(':').first}');
         continue;
       }
     }
 
     // If all fallback locations fail, use emergency temp location
-    final emergencyPath = path.join(Directory.systemTemp.path, 'flutter_access_advisor_usage_emergency.json');
+    final emergencyPath = path.join(Directory.systemTemp.path,
+        'flutter_access_advisor_usage_emergency.json');
     _cachedStorageFilePath = emergencyPath;
     _logWarning('Using fallback storage location');
     return emergencyPath;
@@ -229,7 +247,8 @@ class UsageStorageService {
 
     // Tertiary location: user's documents directory (if available)
     if (homeDir != null) {
-      final documentsPath = path.join(homeDir, 'Documents', 'flutter_access_advisor_usage.json');
+      final documentsPath =
+          path.join(homeDir, 'Documents', 'flutter_access_advisor_usage.json');
       locations.add(documentsPath);
     }
 
@@ -268,12 +287,12 @@ class UsageStorageService {
           // Verify existing file is valid
           await _validateStorageFile(File(filePath));
         }
-        
+
         _logInfo('Storage initialized successfully at: $filePath');
         return; // Success
-        
       } on StoragePermissionException catch (e) {
-        _logWarning('Permission error initializing storage (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Permission error initializing storage (attempt $attempt/$_maxRetryAttempts): $e');
         if (attempt == _maxRetryAttempts) {
           await _tryFallbackStorageLocation();
           // Try one more time with fallback
@@ -282,21 +301,27 @@ class UsageStorageService {
             return;
           } catch (_) {
             _logWarning('Failed to initialize storage even with fallback');
-            throw const StorageException('Cannot initialize storage after trying all fallback locations');
+            throw const StorageException(
+                'Cannot initialize storage after trying all fallback locations');
           }
         }
         await _delayRetry(attempt);
       } on StorageCorruptionException catch (e) {
-        _logWarning('Storage corruption during initialization (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Storage corruption during initialization (attempt $attempt/$_maxRetryAttempts): $e');
         await _handleStorageCorruption();
         if (attempt == _maxRetryAttempts) {
-          throw const StorageException('Cannot recover from storage corruption during initialization');
+          throw const StorageException(
+              'Cannot recover from storage corruption during initialization');
         }
         await _delayRetry(attempt);
       } catch (e) {
-        _logWarning('Unexpected error initializing storage (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Unexpected error initializing storage (attempt $attempt/$_maxRetryAttempts): $e');
         if (attempt == _maxRetryAttempts) {
-          throw StorageException('Failed to initialize storage after $attempt attempts', cause: e is Exception ? e : Exception(e.toString()));
+          throw StorageException(
+              'Failed to initialize storage after $attempt attempts',
+              cause: e is Exception ? e : Exception(e.toString()));
         }
         await _delayRetry(attempt);
       }
@@ -374,18 +399,17 @@ class UsageStorageService {
 
     try {
       final jsonString = json.encode(data.toJson());
-      
+
       // Write to temporary file first, then rename for atomic operation
       final tempFile = File('${filePath}_tmp');
       await tempFile.writeAsString(jsonString);
-      
+
       // Verify the written data is valid
       final verifyContent = await tempFile.readAsString();
       json.decode(verifyContent); // This will throw if JSON is invalid
-      
+
       // Atomic rename
       await tempFile.rename(filePath);
-      
     } on FileSystemException catch (e) {
       throw StoragePermissionException(
         'Cannot write to storage file',
@@ -411,13 +435,15 @@ class UsageStorageService {
         if (attempt == _maxRetryAttempts) {
           rethrow;
         }
-        _logWarning('Permission error saving data (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Permission error saving data (attempt $attempt/$_maxRetryAttempts): $e');
         await _delayRetry(attempt);
       } catch (e) {
         if (attempt == _maxRetryAttempts) {
           rethrow;
         }
-        _logWarning('Error saving data (attempt $attempt/$_maxRetryAttempts): $e');
+        _logWarning(
+            'Error saving data (attempt $attempt/$_maxRetryAttempts): $e');
         await _delayRetry(attempt);
       }
     }
@@ -456,20 +482,21 @@ class UsageStorageService {
         }
 
         // Test write permissions by creating a temporary file
-        final testFile = File(path.join(directoryPath, '.test_write_permission_${DateTime.now().millisecondsSinceEpoch}'));
+        final testFile = File(path.join(directoryPath,
+            '.test_write_permission_${DateTime.now().millisecondsSinceEpoch}'));
         await testFile.writeAsString('test');
-        
+
         // Verify we can read it back
         final content = await testFile.readAsString();
         if (content != 'test') {
           throw Exception('Write verification failed');
         }
-        
+
         await testFile.delete();
         return true;
-        
       } catch (e) {
-        _logWarning('Storage location unavailable (attempt $attempt/2): ${e.toString().split(':').first}');
+        _logWarning(
+            'Storage location unavailable (attempt $attempt/2): ${e.toString().split(':').first}');
         if (attempt == 1) {
           // Try to fix common issues on first failure
           await _attemptDirectoryRecovery(directoryPath);
@@ -483,7 +510,7 @@ class UsageStorageService {
   Future<void> _attemptDirectoryRecovery(String directoryPath) async {
     try {
       final directory = Directory(directoryPath);
-      
+
       // If directory exists but we can't write, try to fix permissions
       if (directory.existsSync()) {
         // On Unix-like systems, try to fix permissions
@@ -515,7 +542,7 @@ class UsageStorageService {
     try {
       final filePath = await getStorageFilePath();
       final corruptedFile = File(filePath);
-      
+
       if (!corruptedFile.existsSync()) {
         _logInfo('Corrupted file no longer exists, creating new storage');
         await initializeStorage();
@@ -525,7 +552,7 @@ class UsageStorageService {
       // Create backup with timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final backupPath = '$filePath.corrupted_backup_$timestamp';
-      
+
       try {
         await corruptedFile.copy(backupPath);
         _logWarning('Corrupted storage file backed up to: $backupPath');
@@ -551,16 +578,17 @@ class UsageStorageService {
       // Create new storage with recovered data or empty
       final newData = recoveredData ?? UsageStorageData.empty();
       await _saveStorageDataWithRetry(newData);
-      
+
       if (recoveredData != null) {
-        _logInfo('Storage corruption recovered with ${recoveredData.records.length} records preserved');
+        _logInfo(
+            'Storage corruption recovered with ${recoveredData.records.length} records preserved');
       } else {
         _logInfo('Storage corruption recovered with new empty storage');
       }
-      
     } catch (e) {
       _logWarning('Storage corruption recovery failed: $e');
-      throw StorageCorruptionException('Cannot recover from storage corruption', cause: e is Exception ? e : Exception(e.toString()));
+      throw StorageCorruptionException('Cannot recover from storage corruption',
+          cause: e is Exception ? e : Exception(e.toString()));
     }
   }
 
@@ -568,18 +596,19 @@ class UsageStorageService {
   Future<UsageStorageData?> _attemptDataRecovery(File corruptedFile) async {
     try {
       final content = await corruptedFile.readAsString();
-      
+
       // Try to find valid JSON objects in the content
       final lines = content.split('\n');
       final recoveredRecords = <UsageRecord>[];
-      
+
       for (final line in lines) {
         if (line.trim().isEmpty) continue;
-        
+
         try {
           // Try to parse individual lines as JSON
           final jsonData = json.decode(line.trim());
-          if (jsonData is Map<String, dynamic> && jsonData.containsKey('timestamp')) {
+          if (jsonData is Map<String, dynamic> &&
+              jsonData.containsKey('timestamp')) {
             final record = UsageRecord.fromJson(jsonData);
             recoveredRecords.add(record);
           }
@@ -588,7 +617,7 @@ class UsageStorageService {
           continue;
         }
       }
-      
+
       if (recoveredRecords.isNotEmpty) {
         return UsageStorageData(
           version: '1.0',
@@ -597,10 +626,9 @@ class UsageStorageService {
           lastUpdated: DateTime.now(),
         );
       }
-      
+
       // Try alternative recovery methods
       return await _attemptAlternativeRecovery(content);
-      
     } catch (e) {
       _logWarning('Data recovery attempt failed: $e');
       return null;
@@ -614,7 +642,7 @@ class UsageStorageService {
       final jsonPattern = RegExp(r'\{[^{}]*"timestamp"[^{}]*\}');
       final matches = jsonPattern.allMatches(content);
       final recoveredRecords = <UsageRecord>[];
-      
+
       for (final match in matches) {
         try {
           final jsonStr = match.group(0);
@@ -627,7 +655,7 @@ class UsageStorageService {
           continue;
         }
       }
-      
+
       if (recoveredRecords.isNotEmpty) {
         return UsageStorageData(
           version: '1.0',
@@ -636,11 +664,10 @@ class UsageStorageService {
           lastUpdated: DateTime.now(),
         );
       }
-      
     } catch (e) {
       _logWarning('Alternative recovery failed: $e');
     }
-    
+
     return null;
   }
 
@@ -651,10 +678,9 @@ class UsageStorageService {
       if (content.trim().isEmpty) {
         return; // Empty file is valid
       }
-      
+
       final jsonData = json.decode(content) as Map<String, dynamic>;
       UsageStorageData.fromJson(jsonData); // This will throw if invalid
-      
     } on FileSystemException catch (e) {
       throw StoragePermissionException(
         'Cannot read storage file for validation',
@@ -681,7 +707,7 @@ class UsageStorageService {
     _logWarning('Attempting to switch storage location');
     _cachedStorageFilePath = null; // Clear cached path to force re-evaluation
     _attemptedPaths.clear(); // Clear attempted paths to try alternatives
-    
+
     // Force re-evaluation of storage path
     await getStorageFilePath();
   }
