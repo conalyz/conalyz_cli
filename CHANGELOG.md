@@ -1,4 +1,4 @@
-## 1.0.0
+## 0.1.0 (2025-12-01)
 
 * Initial release of Conalyz CLI
 * AST-based Flutter accessibility analyzer with comprehensive widget coverage
@@ -10,3 +10,16 @@
 * Comprehensive checks for Material and Cupertino widgets
 * WCAG compliance validation
 * Interactive HTML reports with filtering capabilities
+
+## [Unreleased]
+
+### Added
+- Initial project setup
+- Core analysis engine
+- Basic reporting functionality
+
+### Changed
+- Updated dependencies to latest stable versions
+
+### Fixed
+- Minor bug fixes and improvements
