@@ -1,11 +1,9 @@
 import 'dart:io';
-import 'dart:isolate';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'flutter_specific_rules.dart';
-import 'line_counter_service.dart';
 import 'platform_type.dart';
 
 class AccessibilityIssue {
@@ -572,10 +570,8 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     _trackParentChild(node);
 
     // Extract constructor name more efficiently
-    String constructorName;
     final type = node.constructorName.type;
-
-    constructorName = type.name2.lexeme ?? type.toString();
+    final constructorName = type.name.lexeme;
 
     // Handle named constructors
     String fullConstructorName = constructorName;

@@ -1,6 +1,6 @@
 name: conalyz
 description: A powerful CLI tool for analyzing Flutter applications for accessibility issues using AST-based analysis with comprehensive widget coverage.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/conalyz/conalyz_cli
 issue_tracker: https://github.com/conalyz/conalyz_cli/issues
 documentation: https://github.com/conalyz/conalyz_cli#readme

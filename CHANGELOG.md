@@ -11,6 +11,18 @@
 * WCAG compliance validation
 * Interactive HTML reports with filtering capabilities
 
+## [0.1.1] - 2025-12-07
+
+### Fixed
+- Fixed compatibility issues with analyzer package v9.0.0+
+- Updated `name2` to `name` property in AST traversal to match the latest analyzer API
+- Removed unused imports and improved code quality
+- Fixed potential null safety issues in widget analysis
+
+### Changed
+- Updated minimum Dart SDK version to 3.0.0
+- Improved error handling in AST traversal
+
 ## [Unreleased]
 
 ### Added

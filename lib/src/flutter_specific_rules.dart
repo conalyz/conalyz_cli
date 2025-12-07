@@ -567,7 +567,7 @@ class TextScalingSupportRule extends AccessibilityRule {
     while (current != null) {
       if (current is InstanceCreationExpression) {
         final namedType = current.constructorName.type;
-        final name = namedType.name2.lexeme;
+        final name = namedType.name.lexeme;
         if (name == 'MediaQuery') {
           return true;
         }
