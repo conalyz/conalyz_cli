@@ -148,6 +148,13 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       MobileTimeoutRule(),
       ReducedMotionSupportRule(),
       ExcludeSemanticsRule(),
+      BlockSemanticsRule(),
+      MergeSemanticsRule(),
+      TapTargetSizeRule(),
+      CustomErrorAnnouncementRule(),
+      HeadingStructureRule(),
+      TableHeadersRule(),
+      LiveRegionRule(),
 
       // Rules to be revised for better Flutter fit
       ColorContrastRule(),
