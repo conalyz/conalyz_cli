@@ -142,7 +142,11 @@ Image.asset(
 **Missing label on TextField:**
 ```dart
 // Before
-TextField(hintText: 'Enter email')
+TextField(
+  decoration: InputDecoration(
+    hintText: 'Enter email',
+  ),
+)
 
 // After
 TextField(
