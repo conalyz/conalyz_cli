@@ -161,7 +161,7 @@ TextField(
 
 ## Step 7: Apply fixes (with user confirmation)
 
-Before editing files, always show the user the planned changes and ask for confirmation. Then apply fixes using str_replace on the actual files.
+Before editing files, always show the user the planned changes and ask for confirmation. Then apply fixes by generating targeted patch-based changes on specific line ranges in the affected files (rather than using global search/replace) and writing those edits to disk.
 
 After applying, re-run conalyz to verify the issue count dropped:
 
