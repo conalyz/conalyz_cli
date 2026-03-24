@@ -60,17 +60,19 @@ cat ./conalyz_report/accessibility_report.json
 
 ## Step 4: Parse and prioritize issues
 
-The JSON report contains:
-- `summary` — total issues, severity breakdown, files analyzed
-- `issues[]` — list of issues, each with:
-  - `severity` — `critical`, `high`, `medium`, `low`
-  - `type` — e.g. `missing_semantic_label`, `insufficient_contrast`, `missing_tooltip`
-  - `file` — file path
-  - `line` — line number
-  - `widget` — widget name
-  - `message` — description
-  - `suggestion` — recommended fix
+The JSON report contains top-level fields like:
+- `totalIssues` — total number of issues found
+- `issuesBySeverity` — breakdown of counts by severity
+- `analyzedFiles` — list or count of files that were analyzed
+- `issues` — list of individual issues
 
+Each entry in `issues[]` typically includes:
+- `severity` — `critical`, `high`, `medium`, `low`
+- `type` — e.g. `missing_semantic_label`, `insufficient_contrast`, `missing_tooltip`
+- `file` — file path
+- `line` — line number
+- `message` — human-readable description of the problem
+- `suggestion` — recommended fix or remediation guidance
 **Prioritization order:**
 1. `critical` — blocks screen reader users entirely
 2. `high` — significantly degrades accessibility
