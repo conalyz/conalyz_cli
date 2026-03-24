@@ -1,0 +1,13 @@
+{
+  "name": "conalyz",
+  "description": "Flutter accessibility analyzer that checks your apps for WCAG compliance, semantic labels, color contrast, and more accessibility issues.",
+  "version": "0.1.1",
+  "author": "conalyz",
+  "license": "MIT",
+  "homepage": "https://github.com/conalyz/conalyz_cli",
+  "repository": "https://github.com/conalyz/conalyz_cli",
+  "keywords": ["flutter", "accessibility", "wcag", "a11y", "analysis"],
+  "category": "Development Tools",
+  "tags": ["flutter", "accessibility", "testing", "analysis"],
+  "skill_path": "conalyz/SKILL.md"
+}

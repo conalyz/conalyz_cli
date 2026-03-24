@@ -1,5 +1,15 @@
 # Conalyz
 
+[![Agent Skill](https://img.shields.io/badge/Agent%20Skill-SKILL.md-blue)](./SKILL.md)
+[![Pub Version](https://img.shields.io/pub/v/conalyz.svg)](https://pub.dev/packages/conalyz)
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/network)
+[![GitHub issues](https://img.shields.io/github/issues/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/conalyz/conalyz_cli/pulls)
+
 A powerful command-line tool for analyzing Flutter applications for accessibility issues. Conalyz uses AST-based analysis to provide comprehensive accessibility checks for both Material and Cupertino widgets, helping developers ensure their Flutter applications are accessible to all users.
 
 ## Features
@@ -11,6 +21,16 @@ A powerful command-line tool for analyzing Flutter applications for accessibilit
 - **JSON Export**: Export results for CI/CD integration
 - **Usage Tracking**: Track your analysis statistics and productivity insights
 - **WCAG Compliance**: Validates against Web Content Accessibility Guidelines
+
+## AI Agent Skill
+
+Use conalyz directly inside Claude Code, Cursor, Copilot, Windsurf, and 35+ more AI agents:
+
+```bash
+npx skills add conalyz/conalyz_cli
+```
+
+Then just ask your AI: *"Check my Flutter app for accessibility issues"*
 
 ## Installation
 
