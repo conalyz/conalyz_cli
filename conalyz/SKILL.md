@@ -167,6 +167,76 @@ conalyz --path <PATH> --json --output ./conalyz_report_after
 
 ---
 
+## WCAG Reference
+
+Conalyz checks against key WCAG 2.1 guidelines. Here's what each level means:
+
+### WCAG Levels
+- **Level A**: Essential - must be met for basic accessibility
+- **Level AA**: Standard compliance - recommended for most sites
+- **Level AAA**: Enhanced - optional, higher standard
+
+### Key WCAG Guidelines Conalyz Checks
+
+**1.1 Non-text Content (Level A)**
+- All images must have `semanticLabel` or alternative text
+- Icons need tooltips describing their function
+
+**1.3.3 Sensory Characteristics (Level A)**
+- Instructions shouldn't rely only on color, shape, or location
+- Provide text alternatives for visual cues
+
+**1.4.3 Contrast (Level AA)**
+- Normal text: 4.5:1 contrast ratio minimum
+- Large text (18pt+): 3:1 contrast ratio minimum
+- Interactive elements: 3:1 contrast ratio minimum
+
+**2.1.1 Keyboard (Level A)**
+- All functionality must be accessible via keyboard
+- No keyboard traps
+
+**2.4.2 Page Titled (Level A)**
+- Each screen should have a descriptive semantic label
+
+**2.4.6 Headings and Labels (Level AA)**
+- Use semantic labels for form fields and sections
+- Logical heading structure
+
+**3.1.1 Language of Page (Level AA)**
+- Specify language for screen readers
+
+**3.2.1 On Focus (Level A)**
+- Focus changes must be predictable
+- No unexpected context changes on focus
+
+**3.3.2 Labels or Instructions (Level A)**
+- Form inputs need clear labels
+- Interactive elements need descriptive text
+
+**4.1.2 Name, Role, Value (Level A)**
+- All UI elements must expose correct semantics
+- Custom widgets need proper accessibility properties
+
+### Quick Color Contrast Examples
+```dart
+// Good contrast (meets WCAG AA)
+Colors.black87 on Colors.white    // 21:1 ratio
+Colors.blue800 on Colors.white    // 7.2:1 ratio
+
+// Poor contrast (fails WCAG AA)
+Colors.grey on Colors.white       // 1.6:1 ratio
+Colors.blue200 on Colors.white    // 2.1:1 ratio
+```
+
+### Testing Your Fixes
+After applying fixes, verify with:
+- Screen reader (VoiceOver, TalkBack)
+- Keyboard navigation
+- High contrast mode
+- Zoom to 200%
+
+---
+
 ## Tips
 
 - For large projects, tackle one file at a time
