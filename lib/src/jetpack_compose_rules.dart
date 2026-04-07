@@ -300,3 +300,95 @@ class ComposeTextFieldLabelRule extends ComposeAccessibilityRule {
         code.contains('contentDescription');
   }
 }
+
+/// Rule: Custom clickables (Rows, Boxes, etc.) should define a Semantic Role
+class ComposeClickableRoleRule extends ComposeAccessibilityRule {
+  @override
+  String get ruleId => 'compose-clickable-role';
+
+  @override
+  String get description =>
+      'Custom clickable containers should define a semantic role (e.g., Role.Button)';
+
+  @override
+  List<String> get targetComposables => ['Modifier.clickable', 'clickable'];
+
+  @override
+  List<AccessibilityIssue> check(
+      ComposeWidgetInfo widget, String filePath) {
+    final issues = <AccessibilityIssue>[];
+
+    // Note: widget.type will match 'clickable' modifier
+    if (['Modifier.clickable', 'clickable'].contains(widget.type)) {
+      if (!_hasRole(widget)) {
+        issues.add(AccessibilityIssue(
+          id: 'compose-clickable-role-${widget.line}',
+          severity: 'medium',
+          type: 'Missing Semantic Role on Clickable',
+          message:
+              'Clickable modifier does not specify a semantic Role, which limits screen reader context.',
+          file: filePath,
+          line: widget.line,
+          column: widget.column,
+          rule: ruleId,
+          suggestion:
+              'Provide a role: Modifier.clickable(role = Role.Button) { ... } or Role.Checkbox, etc.',
+        ));
+      }
+    }
+
+    return issues;
+  }
+
+  bool _hasRole(ComposeWidgetInfo widget) {
+    return widget.sourceCode.contains('role =');
+  }
+}
+
+/// Rule: Toggleables like Checkbox/Switch should have semantic context
+class ComposeToggleableSemanticsRule extends ComposeAccessibilityRule {
+  @override
+  String get ruleId => 'compose-toggleable-semantics';
+
+  @override
+  String get description =>
+      'Raw toggleables should be wrapped in semantic toggleable/selectable rows for larger touch targets and context.';
+
+  @override
+  List<String> get targetComposables => ['Checkbox', 'Switch', 'RadioButton'];
+
+  @override
+  List<AccessibilityIssue> check(
+      ComposeWidgetInfo widget, String filePath) {
+    final issues = <AccessibilityIssue>[];
+
+    if (targetComposables.contains(widget.type)) {
+      // Very basic check: are they standalone without interactive modifiers giving them text context?
+      if (!_hasProperContext(widget)) {
+        issues.add(AccessibilityIssue(
+          id: 'compose-toggleable-semantics-${widget.line}',
+          severity: 'high',
+          type: 'Standalone Toggleable',
+          message:
+              'Standalone ${widget.type} lacks descriptive text context/large touch target for screen readers.',
+          file: filePath,
+          line: widget.line,
+          column: widget.column,
+          rule: ruleId,
+          suggestion:
+              'Wrap the ${widget.type} and Text in a Row with Modifier.toggleable(...) or Modifier.selectable(...) for unified accessibility.',
+        ));
+      }
+    }
+
+    return issues;
+  }
+
+  bool _hasProperContext(ComposeWidgetInfo widget) {
+    // If the widget itself has modifier = Modifier.semantics or it's just declared.
+    // In many standalone usages, they just pass checked/onCheckedChange.
+    final code = widget.sourceCode;
+    return code.contains('Modifier.semantics') ||
+        code.contains('contentDescription'); // A simplistic heuristic
+  }
+}

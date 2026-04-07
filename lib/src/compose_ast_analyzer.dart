@@ -55,29 +55,36 @@ class ComposeAnalyzer {
       );
     }
 
-    final lines = await file.readAsLines();
+    final fullCode = await file.readAsString();
     final issues = <AccessibilityIssue>[];
 
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      for (final rule in rules) {
-        for (final composable in rule.targetComposables) {
-          // Match composable call at start of a line (ignoring comments)
-          if (RegExp('^\\s*$composable\\s*[\\({(]').hasMatch(line) &&
-              !line.trimLeft().startsWith('//')) {
-            final startLine = (i - _contextLines).clamp(0, lines.length - 1);
-            final endLine = (i + _contextLines).clamp(0, lines.length - 1);
-            final context = lines.sublist(startLine, endLine + 1).join('\n');
+    for (final rule in rules) {
+      for (final composable in rule.targetComposables) {
+        // Match the composable name followed by an opening brace or parenthesis
+        final regex = RegExp('\\b$composable\\s*[{(]');
+        final matches = regex.allMatches(fullCode);
 
-            final widget = ComposeWidgetInfo(
-              type: composable,
-              line: i + 1,
-              column: line.indexOf(composable) + 1,
-              sourceCode: context,
-            );
-
-            issues.addAll(rule.check(widget, filePath));
-          }
+        for (final match in matches) {
+           // Skip if it is embedded in a line comment
+           int lineStart = fullCode.lastIndexOf('\n', match.start);
+           lineStart = lineStart == -1 ? 0 : lineStart + 1;
+           String linePrefix = fullCode.substring(lineStart, match.start);
+           if (linePrefix.contains('//')) {
+             continue; // inside a line comment
+           }
+           
+           // Extract block accurately using brace balancing
+           String context = _extractComposableContext(fullCode, match.start);
+           
+           final location = _getLineAndColumn(fullCode, match.start);
+           final widget = ComposeWidgetInfo(
+             type: composable,
+             line: location['line']!,
+             column: location['column']!,
+             sourceCode: context,
+           );
+           
+           issues.addAll(rule.check(widget, filePath));
         }
       }
     }
@@ -89,6 +96,8 @@ class ComposeAnalyzer {
       'low': issues.where((i) => i.severity == 'low').length,
     };
 
+    final linesScanned = fullCode.split('\n').length;
+
     return AnalysisResult(
       totalIssues: issues.length,
       issuesBySeverity: issuesBySeverity,
@@ -96,8 +105,68 @@ class ComposeAnalyzer {
       analyzedFiles: [filePath],
       timestamp: DateTime.now().toIso8601String(),
       platform: platform,
-      linesScanned: lines.length,
+      linesScanned: linesScanned,
     );
+  }
+
+  /// Calculates the 1-indexed line and column for a given string index
+  Map<String, int> _getLineAndColumn(String code, int index) {
+    int line = 1;
+    int column = 1;
+    for (int i = 0; i < index && i < code.length; i++) {
+      if (code[i] == '\n') {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    return {'line': line, 'column': column};
+  }
+
+  /// Accurately extracts the source code context block around a composable match 
+  /// using character-by-character bracket and parenthesis balancing.
+  String _extractComposableContext(String fullCode, int matchIndex) {
+    int openCount = 0;
+    bool started = false;
+    bool inString = false;
+    bool inChar = false;
+    
+    int endIndex = matchIndex;
+    
+    for (int i = matchIndex; i < fullCode.length; i++) {
+      String char = fullCode[i];
+      
+      // string literal toggle
+      if (char == '"' && (i == 0 || fullCode[i-1] != '\\') && !inChar) {
+        inString = !inString;
+      }
+      // char literal toggle
+      if (char == "'" && (i == 0 || fullCode[i-1] != '\\') && !inString) {
+        inChar = !inChar;
+      }
+      
+      if (!inString && !inChar) {
+        if (char == '(' || char == '{') {
+          openCount++;
+          started = true;
+        } else if (char == ')' || char == '}') {
+          openCount--;
+        }
+      }
+      
+      if (started && openCount == 0) {
+        endIndex = i;
+        break;
+      }
+    }
+    
+    // If we didn't find any block logic (extremely rare for standard composables)
+    if (!started) {
+      return fullCode.substring(matchIndex, (matchIndex + 50).clamp(0, fullCode.length));
+    }
+    
+    return fullCode.substring(matchIndex, endIndex + 1);
   }
 
   Future<AnalysisResult> analyzeProject(String projectPath, {required PlatformType platform}) async {

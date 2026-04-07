@@ -161,6 +161,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         ComposeLazyListSemanticKeyRule(),
         ComposeReducedMotionRule(),
         ComposeTextFieldLabelRule(),
+        ComposeClickableRoleRule(),
+        ComposeToggleableSemanticsRule(),
       ];
       final composeAnalyzer = ComposeAnalyzer(rules: composeRules);
 
