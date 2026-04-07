@@ -7,6 +7,8 @@ import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/usage_storage_service.dart';
 import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
+import 'package:conalyz/src/compose_ast_analyzer.dart';
+import 'package:conalyz/src/jetpack_compose_rules.dart';
 
 // Version constant
 const String version = '1.0.0';
@@ -65,9 +67,9 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         abbr: 'p', help: 'Path to Flutter project directory or dart file', mandatory: false)
     ..addOption('platform',
         abbr: 't',
-        help: 'Target platform (mobile/web)',
+        help: 'Target platform (mobile/web/androidNative)',
         defaultsTo: 'mobile',
-        allowed: ['mobile', 'web'])
+        allowed: ['mobile', 'web', 'androidNative'])
     ..addOption('output',
         abbr: 'o',
         help: 'Output directory for reports',
@@ -123,8 +125,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     }
 
     final isFile = pathEntity == FileSystemEntityType.file;
-    if (isFile && !projectPath.endsWith('.dart')) {
-      print('Error: File must be a Dart file (.dart): $projectPath');
+    if (isFile && !projectPath.endsWith('.dart') && !projectPath.endsWith('.kt')) {
+      print('Error: File must be a Dart file (.dart) or Kotlin file (.kt): $projectPath');
       exit(1);
     }
 
@@ -134,32 +136,57 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
       outputDirectory.createSync(recursive: true);
     }
 
+    final isAndroidNative = platform == 'androidNative';
+
     if (isFile) {
-      print('🔍 Analyzing Dart file for accessibility issues: ${projectPath.split('/').last}');
+      print('🔍 Analyzing ${isAndroidNative ? 'Kotlin' : 'Dart'} file for accessibility issues: ${projectPath.split('/').last}');
     } else {
-      print('🔍 Analyzing Flutter project for accessibility issues...');
+      print('🔍 Analyzing ${isAndroidNative ? 'Jetpack Compose' : 'Flutter'} project for accessibility issues...');
     }
+    
     if (enableDebug) {
       print('📁 Project path: $projectPath');
       print('🎯 Target platform: $platform');
       print('');
     }
 
-    // Create optimized analyzer with built-in rules (includes all latest rules and widget recognition)
-    final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
-
     final startTime = DateTime.now();
+    late AnalysisResult analysisResult;
 
-    // Analyze the project or file
-    final analysisResult = isFile
-        ? await analyzer.analyzeFile(
-            projectPath,
-            platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
-          )
-        : await analyzer.analyzeProject(
-            projectPath,
-            platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
-          );
+    if (isAndroidNative) {
+      final composeRules = [
+        ComposeContentDescriptionRule(),
+        ComposeTouchTargetRule(),
+        ComposeHardcodedTextRule(),
+        ComposeLazyListSemanticKeyRule(),
+        ComposeReducedMotionRule(),
+        ComposeTextFieldLabelRule(),
+      ];
+      final composeAnalyzer = ComposeAnalyzer(rules: composeRules);
+
+      analysisResult = isFile
+          ? await composeAnalyzer.analyzeFile(
+              projectPath,
+              platform: PlatformType.androidNative,
+            )
+          : await composeAnalyzer.analyzeProject(
+              projectPath,
+              platform: PlatformType.androidNative,
+            );
+    } else {
+      // Create optimized analyzer with built-in rules (includes all latest rules and widget recognition)
+      final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
+
+      analysisResult = isFile
+          ? await analyzer.analyzeFile(
+              projectPath,
+              platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
+            )
+          : await analyzer.analyzeProject(
+              projectPath,
+              platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
+            );
+    }
 
     final endTime = DateTime.now();
     final duration = endTime.difference(startTime);
@@ -290,8 +317,8 @@ void _showAnalysisHelp(ArgParser parser) {
       '  conalyz usage --detailed        # View detailed usage analytics');
   print('');
   print('Features:');
-  print('  • Comprehensive Flutter widget accessibility analysis');
-  print('  • Support for both mobile and web platforms');
+  print('  • Comprehensive Flutter/Compose widget accessibility analysis');
+  print('  • Support for mobile, web, and native Android platforms');
   print('  • Automatic usage tracking (lines scanned, analysis time)');
   print('  • JSON and HTML report generation');
   print('  • Detailed usage statistics and productivity insights');
