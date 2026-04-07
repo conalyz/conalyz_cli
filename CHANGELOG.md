@@ -1,3 +1,10 @@
+## 0.2.0
+
+* Native Android Development Support! Added full AST-based support for Kotlin files and Jetpack Compose.
+* Introduced rules for Jetpack Compose (Content Descriptions, Hardcoded text, Touch Targets, Semantic Keys, Reduced Motion).
+* Added `androidNative` platform flag to the CLI (`--platform androidNative`).
+* Overall pipeline enhancements to support `.kt` alongside `.dart` files robustly.
+
 ## 0.1.2
 
 * Added an agent skill (`conalyz/SKILL.md`) for AI assistants (e.g., Claude Code, Cursor, Copilot).

@@ -10,13 +10,13 @@
 [![GitHub issues](https://img.shields.io/github/issues/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/conalyz/conalyz_cli/pulls)
 
-A powerful command-line tool for analyzing Flutter applications for accessibility issues. Conalyz uses AST-based analysis to provide comprehensive accessibility checks for both Material and Cupertino widgets, helping developers ensure their Flutter applications are accessible to all users.
+A powerful command-line tool for analyzing Flutter and Native Android (Jetpack Compose) applications for accessibility issues. Conalyz uses AST-based analysis to provide comprehensive accessibility checks for Material, Cupertino, and Compose widgets, helping developers ensure their applications are accessible to all users.
 
 ## Features
 
 - **AST-based Analysis**: Fast and accurate analysis using Abstract Syntax Tree parsing
-- **Comprehensive Widget Coverage**: Supports Material, Cupertino, and custom widgets
-- **Multi-Platform Support**: Analyze for mobile and web platforms
+- **Comprehensive Widget Coverage**: Supports Material, Cupertino, custom Flutter widgets, and Jetpack Compose UI
+- **Multi-Platform Support**: Analyze for mobile, web, and native Android (Kotlin) platforms
 - **Interactive Reports**: Generate HTML reports with filtering and detailed issue information
 - **JSON Export**: Export results for CI/CD integration
 - **Usage Tracking**: Track your analysis statistics and productivity insights
@@ -30,7 +30,7 @@ Use conalyz directly inside Claude Code, Cursor, Copilot, Windsurf, and 35+ more
 npx skills add conalyz/conalyz_cli
 ```
 
-Then just ask your AI: *"Check my Flutter app for accessibility issues"*
+Then just ask your AI: *"Check my Flutter/Android app for accessibility issues"*
 
 ## Installation
 
@@ -74,6 +74,9 @@ conalyz --path lib/main.dart
 # Analyze for web platform
 conalyz --path ./lib --platform web
 
+# Analyze a Native Android (Jetpack Compose) project
+conalyz --path /path/to/android/app --platform androidNative
+
 # Custom output directory
 conalyz --path ./lib --output ./reports
 
@@ -87,8 +90,8 @@ conalyz usage --detailed
 ### Command Line Options
 
 **Analysis Options:**
-- `--path, -p`: Path to Flutter project directory or Dart file (required)
-- `--platform, -t`: Target platform: `mobile` or `web` (default: `mobile`)
+- `--path, -p`: Path to Flutter/Android project directory or Dart/Kotlin file (required)
+- `--platform, -t`: Target platform: `mobile`, `web`, or `androidNative` (default: `mobile`)
 - `--output, -o`: Output directory for reports (default: `accessibility_report`)
 - `--json`: Generate JSON report (default: `true`)
 - `--html`: Generate HTML report (default: `true`)
@@ -138,13 +141,15 @@ conalyz usage --detailed
 ## Accessibility Checks
 
 Conalyz checks for:
-- Missing semantic labels on interactive widgets
+- Missing semantic labels on interactive widgets (Flutter & Compose)
 - Insufficient color contrast
+- Accurate minimum touch target sizing (e.g. 48dp metrics)
 - Missing tooltips on icon buttons
 - Inaccessible gesture detectors
 - Form field accessibility issues
-- Image accessibility (alt text)
+- Image accessibility (alt text / content descriptors)
 - Focus management issues
+- Proper LazyList semantic keys and LocalReduceMotion checks (Native Android)
 - And many more...
 
 ## Contributing

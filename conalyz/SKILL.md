@@ -1,13 +1,13 @@
 ---
 name: conalyz
-description: Analyze Flutter and Dart projects for accessibility issues using conalyz. Use this skill when the user asks to check accessibility, audit widgets, find WCAG issues, or improve accessibility in their Flutter app. Triggers on phrases like "check accessibility", "audit my Flutter app", "find accessibility issues", "WCAG compliance", or any mention of conalyz.
+description: Analyze Flutter, Dart, and Native Android (Jetpack Compose/Kotlin) projects for accessibility issues using conalyz. Use this skill when the user asks to check accessibility, audit widgets, find WCAG issues, or improve accessibility in their app. Triggers on phrases like "check accessibility", "audit my app", "find accessibility issues", "WCAG compliance", or any mention of conalyz.
 ---
 
-# Conalyz — Flutter Accessibility Analyzer
+# Conalyz — Flutter & Jetpack Compose Accessibility Analyzer
 
 ## Overview
 
-Conalyz is an AST-based CLI tool that scans Flutter/Dart code for accessibility issues and generates detailed JSON + HTML reports. This skill runs conalyz, interprets results, prioritizes fixes, and generates corrected Dart code.
+Conalyz is an AST-based CLI tool that scans Flutter/Dart and Native Android/Kotlin code for accessibility issues and generates detailed JSON + HTML reports. This skill runs conalyz, interprets results, prioritizes fixes, and generates corrected code.
 
 ---
 
@@ -39,6 +39,7 @@ Ask the user for the path if not already provided. Common defaults:
 Also check if they want a specific platform:
 - `--platform mobile` (default)
 - `--platform web`
+- `--platform androidNative` (for Jetpack Compose / Kotlin)
 
 ---
 
@@ -99,7 +100,7 @@ Then group issues by file so the user sees the full picture per file rather than
 
 ## Step 6: Generate fixes
 
-For each critical and high issue, read the affected file and generate corrected Dart code.
+For each critical and high issue, read the affected file and generate corrected Dart or Kotlin code.
 
 ### Common fix patterns:
 
@@ -157,6 +158,15 @@ TextField(
     labelText: 'Email address',
   ),
 )
+```
+
+**Missing contentDescription on Compose Image (Android Native):**
+```kotlin
+// Before
+Image(painter = painterResource(id = R.drawable.logo), contentDescription = null)
+
+// After
+Image(painter = painterResource(id = R.drawable.logo), contentDescription = "App logo")
 ```
 
 ---

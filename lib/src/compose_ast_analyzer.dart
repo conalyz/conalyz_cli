@@ -4,6 +4,8 @@ import 'dart:io';
 import 'optimized_ast_analyzer.dart'; // reuse AccessibilityIssue and AnalysisResult
 import 'platform_type.dart';
 
+/// Holds metadata about a detected Jetpack Compose UI component (e.g. composable)
+/// including its position, type, and surrounding code context for rule evaluation.
 class ComposeWidgetInfo {
   final String type;
   final int line;
@@ -20,6 +22,8 @@ class ComposeWidgetInfo {
   });
 }
 
+/// Abstract base class for defining Native Android (Jetpack Compose) accessibility checks.
+/// Rules inherited from this must specify their target composables and their evaluation logic.
 abstract class ComposeAccessibilityRule {
   String get ruleId;
   String get description;
@@ -28,6 +32,9 @@ abstract class ComposeAccessibilityRule {
   List<AccessibilityIssue> check(ComposeWidgetInfo widget, String filePath);
 }
 
+/// Main AST-based analyzer for parsing Kotlin code and validating Jetpack Compose UI
+/// nodes against a suite of accessibility rules. Processes `.kt` files to generate
+/// a comprehensive [AnalysisResult].
 class ComposeAnalyzer {
   final List<ComposeAccessibilityRule> rules;
   static const int _contextLines = 30;
