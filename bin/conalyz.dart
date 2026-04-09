@@ -9,6 +9,7 @@ import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
 import 'package:conalyz/src/compose_ast_analyzer.dart';
 import 'package:conalyz/src/jetpack_compose_rules.dart';
+import 'package:conalyz/src/compose_redundant_semantics_rules.dart';
 
 // Version constant
 const String version = '1.0.0';
@@ -163,6 +164,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         ComposeTextFieldLabelRule(),
         ComposeClickableRoleRule(),
         ComposeToggleableSemanticsRule(),
+        ComposeRedundantMergeDescendantsRule(),
+        ComposeRedundantIsTraversalGroupRule(),
       ];
       final composeAnalyzer = ComposeAnalyzer(rules: composeRules);
 
