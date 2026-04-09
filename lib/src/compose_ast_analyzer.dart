@@ -58,10 +58,17 @@ class ComposeAnalyzer {
     final fullCode = await file.readAsString();
     final issues = <AccessibilityIssue>[];
 
+    // Precompute line start offsets using native indexOf for maximum performance (O(N) with fast path)
+    final lineStarts = <int>[0];
+    int nlIndex = -1;
+    while ((nlIndex = fullCode.indexOf('\n', nlIndex + 1)) != -1) {
+      lineStarts.add(nlIndex + 1);
+    }
+
     for (final rule in rules) {
       for (final composable in rule.targetComposables) {
         // Match the composable name followed by an opening brace or parenthesis
-        final regex = RegExp('\\b$composable\\s*[{(]');
+        final regex = RegExp('\\b${RegExp.escape(composable)}\\s*[{(]');
         final matches = regex.allMatches(fullCode);
 
         for (final match in matches) {
@@ -69,14 +76,14 @@ class ComposeAnalyzer {
            int lineStart = fullCode.lastIndexOf('\n', match.start);
            lineStart = lineStart == -1 ? 0 : lineStart + 1;
            String linePrefix = fullCode.substring(lineStart, match.start);
-           if (linePrefix.contains('//')) {
+           if (_isInLineComment(linePrefix)) {
              continue; // inside a line comment
            }
            
            // Extract block accurately using brace balancing
            String context = _extractComposableContext(fullCode, match.start);
            
-           final location = _getLineAndColumn(fullCode, match.start);
+           final location = _getLineAndColumn(match.start, lineStarts);
            final widget = ComposeWidgetInfo(
              type: composable,
              line: location['line']!,
@@ -96,7 +103,7 @@ class ComposeAnalyzer {
       'low': issues.where((i) => i.severity == 'low').length,
     };
 
-    final linesScanned = fullCode.split('\n').length;
+    final linesScanned = lineStarts.length;
 
     return AnalysisResult(
       totalIssues: issues.length,
@@ -109,28 +116,62 @@ class ComposeAnalyzer {
     );
   }
 
-  /// Calculates the 1-indexed line and column for a given string index
-  Map<String, int> _getLineAndColumn(String code, int index) {
-    int line = 1;
-    int column = 1;
-    for (int i = 0; i < index && i < code.length; i++) {
-      if (code[i] == '\n') {
-        line++;
-        column = 1;
+  /// Calculates the 1-indexed line and column for a given string index using binary search (O(log N))
+  Map<String, int> _getLineAndColumn(int index, List<int> lineStarts) {
+    int low = 0;
+    int high = lineStarts.length - 1;
+    
+    while (low <= high) {
+      int mid = low + (high - low) ~/ 2;
+      if (lineStarts[mid] == index) {
+        low = mid + 1;
+        break;
+      } else if (lineStarts[mid] < index) {
+        low = mid + 1;
       } else {
-        column++;
+        high = mid - 1;
       }
     }
+    
+    final line = low;
+    final column = index - lineStarts[line - 1] + 1;
     return {'line': line, 'column': column};
   }
 
+  /// Evaluates if the line prefix contains a legitimate comment marker
+  /// by skipping '//' tokens wrapped inside text literals like URLs.
+  bool _isInLineComment(String linePrefix) {
+    bool inString = false;
+    bool inChar = false;
+    
+    for (int i = 0; i < linePrefix.length - 1; i++) { // check up to length - 1 to lookahead for '//'
+      String c = linePrefix[i];
+      
+      // string literal toggle
+      if (c == '"' && (i == 0 || linePrefix[i-1] != '\\') && !inChar) {
+        inString = !inString;
+      }
+      // char literal toggle
+      else if (c == "'" && (i == 0 || linePrefix[i-1] != '\\') && !inString) {
+        inChar = !inChar;
+      }
+      // true comment detection
+      else if (!inString && !inChar && c == '/' && linePrefix[i+1] == '/') {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// Accurately extracts the source code context block around a composable match 
-  /// using character-by-character bracket and parenthesis balancing.
+  /// using character-by-character bracket and parenthesis balancing, heavily accounting
+  /// for Jetpack Compose's trailing lambda syntax.
   String _extractComposableContext(String fullCode, int matchIndex) {
     int openCount = 0;
     bool started = false;
     bool inString = false;
     bool inChar = false;
+    bool waitingForTrailingLambda = false;
     
     int endIndex = matchIndex;
     
@@ -150,14 +191,28 @@ class ComposeAnalyzer {
         if (char == '(' || char == '{') {
           openCount++;
           started = true;
+          waitingForTrailingLambda = false;
         } else if (char == ')' || char == '}') {
           openCount--;
         }
       }
       
-      if (started && openCount == 0) {
-        endIndex = i;
-        break;
+      if (started && openCount == 0 && !waitingForTrailingLambda) {
+        bool hasTrailingLambda = false;
+        for (int j = i + 1; j < fullCode.length; j++) {
+          if (fullCode[j].trim().isEmpty) continue;
+          if (fullCode[j] == '{') {
+            hasTrailingLambda = true;
+          }
+          break;
+        }
+        
+        if (hasTrailingLambda) {
+          waitingForTrailingLambda = true;
+        } else {
+          endIndex = i;
+          break;
+        }
       }
     }
     

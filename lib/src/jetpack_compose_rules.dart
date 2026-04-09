@@ -17,8 +17,6 @@ class ComposeContentDescriptionRule extends ComposeAccessibilityRule {
         'Image',
         'Icon',
         'IconButton',
-        'FloatingActionButton',
-        'Button',
       ];
 
   @override
@@ -109,7 +107,7 @@ class ComposeTouchTargetRule extends ComposeAccessibilityRule {
     if (widget.type == 'IconButton') return true;
     // Check for explicit sizing
     return code.contains('minimumInteractiveComponentSize') ||
-        code.contains(RegExp(r'size\(4[89]\.dp|5\d\.dp|[6-9]\d\.dp')) ||
+        code.contains(RegExp(r'size\((?:4[89]|5\d|[6-9]\d)\.dp')) ||
         code.contains(RegExp(r'fillMaxWidth|fillMaxSize'));
   }
 }
@@ -196,7 +194,9 @@ class ComposeLazyListSemanticKeyRule extends ComposeAccessibilityRule {
   }
 
   bool _hasItemKeys(ComposeWidgetInfo widget) {
-    return widget.sourceCode.contains(RegExp(r'items\s*\(.*key\s*='));
+    return widget.sourceCode.contains(
+      RegExp(r'items\s*\(.*key\s*=', dotAll: true),
+    );
   }
 }
 
