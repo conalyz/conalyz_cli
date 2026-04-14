@@ -176,7 +176,7 @@ Conalyz checks for:
 - Form field accessibility issues
 - Image accessibility (alt text / content descriptors)
 - Focus management issues
-- Proper LazyList semantic keys and LocalReduceMotion checks (Native Android)
+- Proper LazyList semantic keys and LocalReduceMotion checks (Jetpack Compose)
 - And many more...
 
 ## Contributing

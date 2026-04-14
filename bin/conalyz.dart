@@ -340,7 +340,7 @@ void _showAnalysisHelp(ArgParser parser) {
   print('');
   print('Examples:');
   print(
-      '  conalyz --path ./my_app         # Analyze Flutter project for mobile');
+      '  conalyz --path ./my_app         # Analyze Flutter or Compose project for mobile');
   print(
       '  conalyz --path ./my_app --platform web  # Analyze for web platform');
   print(

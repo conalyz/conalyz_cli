@@ -1,3 +1,11 @@
+## 1.0.0
+
+* **Unified Mobile Platform**: Flutter and Jetpack Compose analysis are now unified under the `--platform mobile` flag.
+* **Automatic Detection**: The analyzer now automatically detects `.dart` and `.kt` files within a project and runs the appropriate analysis engine.
+* **Hybrid Analysis**: Support for mixed projects containing both Flutter and Kotlin code, with results merged into a single report.
+* Removed the explicit `androidNative` platform flag to simplify the user interface.
+* Enhanced HTML reports with dynamic labeling based on detected file types.
+
 ## 0.2.0
 
 * Native Android Development Support! Added full Oregex-based support for Kotlin files and Jetpack Compose.

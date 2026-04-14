@@ -159,7 +159,7 @@ TextField(
 )
 ```
 
-**Missing contentDescription on Compose Image (Android Native):**
+**Missing contentDescription on Compose Image:**
 ```kotlin
 // Before
 Image(painter = painterResource(id = R.drawable.logo), contentDescription = null)
