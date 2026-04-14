@@ -68,9 +68,9 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         abbr: 'p', help: 'Path to Flutter project directory or dart file', mandatory: false)
     ..addOption('platform',
         abbr: 't',
-        help: 'Target platform (mobile/web/androidNative)',
+        help: 'Target platform (mobile/web)',
         defaultsTo: 'mobile',
-        allowed: ['mobile', 'web', 'androidNative'])
+        allowed: ['mobile', 'web'])
     ..addOption('output',
         abbr: 'o',
         help: 'Output directory for reports',
@@ -137,12 +137,11 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
       outputDirectory.createSync(recursive: true);
     }
 
-    final isAndroidNative = platform == 'androidNative';
-
     if (isFile) {
-      print('🔍 Analyzing ${isAndroidNative ? 'Kotlin' : 'Dart'} file for accessibility issues: ${projectPath.split('/').last}');
+      final ext = projectPath.split('.').last;
+      print('🔍 Analyzing $ext file for accessibility issues: ${projectPath.split('/').last}');
     } else {
-      print('🔍 Analyzing ${isAndroidNative ? 'Jetpack Compose' : 'Flutter'} project for accessibility issues...');
+      print('🔍 Analyzing project for accessibility issues (Platform: $platform)...');
     }
     
     if (enableDebug) {
@@ -154,42 +153,72 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     final startTime = DateTime.now();
     late AnalysisResult analysisResult;
 
-    if (isAndroidNative) {
-      final composeRules = [
-        ComposeContentDescriptionRule(),
-        ComposeTouchTargetRule(),
-        ComposeHardcodedTextRule(),
-        ComposeLazyListSemanticKeyRule(),
-        ComposeReducedMotionRule(),
-        ComposeTextFieldLabelRule(),
-        ComposeClickableRoleRule(),
-        ComposeToggleableSemanticsRule(),
-        ComposeRedundantMergeDescendantsRule(),
-        ComposeRedundantIsTraversalGroupRule(),
-      ];
-      final composeAnalyzer = ComposeAnalyzer(rules: composeRules);
+    if (platform == 'mobile') {
+      final isDirectory = FileSystemEntity.isDirectorySync(projectPath);
+      
+      bool hasDart = false;
+      bool hasKotlin = false;
+      
+      if (isDirectory) {
+        final dir = Directory(projectPath);
+        await for (final entity in dir.list(recursive: true)) {
+          if (entity is File) {
+            if (entity.path.endsWith('.dart')) hasDart = true;
+            if (entity.path.endsWith('.kt')) hasKotlin = true;
+          }
+          if (hasDart && hasKotlin) break;
+        }
+      } else {
+        hasDart = projectPath.endsWith('.dart');
+        hasKotlin = projectPath.endsWith('.kt');
+      }
 
-      analysisResult = isFile
-          ? await composeAnalyzer.analyzeFile(
-              projectPath,
-              platform: PlatformType.androidNative,
-            )
-          : await composeAnalyzer.analyzeProject(
-              projectPath,
-              platform: PlatformType.androidNative,
-            );
+      AnalysisResult? dartResult;
+      AnalysisResult? kotlinResult;
+
+      if (hasDart) {
+        final flutterAnalyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
+        dartResult = isFile 
+            ? await flutterAnalyzer.analyzeFile(projectPath, platform: PlatformType.mobile)
+            : await flutterAnalyzer.analyzeProject(projectPath, platform: PlatformType.mobile);
+      }
+
+      if (hasKotlin) {
+        final composeRules = [
+          ComposeContentDescriptionRule(),
+          ComposeTouchTargetRule(),
+          ComposeHardcodedTextRule(),
+          ComposeLazyListSemanticKeyRule(),
+          ComposeReducedMotionRule(),
+          ComposeTextFieldLabelRule(),
+          ComposeClickableRoleRule(),
+          ComposeToggleableSemanticsRule(),
+          ComposeRedundantMergeDescendantsRule(),
+          ComposeRedundantIsTraversalGroupRule(),
+        ];
+        final composeAnalyzer = ComposeAnalyzer(rules: composeRules);
+        kotlinResult = isFile
+            ? await composeAnalyzer.analyzeFile(projectPath, platform: PlatformType.mobile)
+            : await composeAnalyzer.analyzeProject(projectPath, platform: PlatformType.mobile);
+      }
+
+      if (dartResult != null && kotlinResult != null) {
+        analysisResult = _mergeAnalysisResults(dartResult, kotlinResult);
+      } else {
+        analysisResult = dartResult ?? kotlinResult ?? _emptyResult(PlatformType.mobile, projectPath);
+      }
     } else {
-      // Create optimized analyzer with built-in rules (includes all latest rules and widget recognition)
+      // web logic
       final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
 
       analysisResult = isFile
           ? await analyzer.analyzeFile(
               projectPath,
-              platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
+              platform: PlatformType.web,
             )
           : await analyzer.analyzeProject(
               projectPath,
-              platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
+              platform: PlatformType.web,
             );
     }
 
@@ -323,8 +352,42 @@ void _showAnalysisHelp(ArgParser parser) {
   print('');
   print('Features:');
   print('  • Comprehensive Flutter/Compose widget accessibility analysis');
-  print('  • Support for mobile, web, and native Android platforms');
+  print('  • Support for mobile and web platforms');
   print('  • Automatic usage tracking (lines scanned, analysis time)');
   print('  • JSON and HTML report generation');
   print('  • Detailed usage statistics and productivity insights');
+}
+
+/// Merges two AnalysisResults into one
+AnalysisResult _mergeAnalysisResults(AnalysisResult a, AnalysisResult b) {
+  final mergedIssues = [...a.issues, ...b.issues];
+  final mergedFiles = {...a.analyzedFiles, ...b.analyzedFiles}.toList();
+  final mergedSeverity = <String, int>{};
+  
+  for (final severity in ['critical', 'high', 'medium', 'low']) {
+    mergedSeverity[severity] = (a.issuesBySeverity[severity] ?? 0) + (b.issuesBySeverity[severity] ?? 0);
+  }
+
+  return AnalysisResult(
+    totalIssues: a.totalIssues + b.totalIssues,
+    issuesBySeverity: mergedSeverity,
+    issues: mergedIssues,
+    analyzedFiles: mergedFiles,
+    timestamp: a.timestamp,
+    platform: a.platform,
+    linesScanned: a.linesScanned + b.linesScanned,
+  );
+}
+
+/// Returns an empty AnalysisResult
+AnalysisResult _emptyResult(PlatformType platform, String projectPath) {
+  return AnalysisResult(
+    totalIssues: 0,
+    issuesBySeverity: {'critical': 0, 'high': 0, 'medium': 0, 'low': 0},
+    issues: [],
+    analyzedFiles: [projectPath],
+    timestamp: DateTime.now().toIso8601String(),
+    platform: platform,
+    linesScanned: 0,
+  );
 }

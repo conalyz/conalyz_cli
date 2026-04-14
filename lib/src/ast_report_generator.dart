@@ -19,10 +19,24 @@ class AstReportGenerator {
     final mediumIssues = result.issues.where((i) => i.severity == 'medium').toList();
     final lowIssues = result.issues.where((i) => i.severity == 'low').toList();
 
-    final isAndroidNative = result.platform.toString().contains('androidNative');
-    final analysisLabel = isAndroidNative ? 'Oregex-based Analysis' : 'AST-based Analysis';
-    final badgeLabel = isAndroidNative ? 'Oregex-powered' : 'AST-powered';
-    final badgeEmoji = isAndroidNative ? '🚀' : '⚡';
+    final hasKotlin = result.analyzedFiles.any((f) => f.endsWith('.kt'));
+    final hasDart = result.analyzedFiles.any((f) => f.endsWith('.dart'));
+    
+    final projectTitle = hasKotlin && hasDart 
+        ? 'Flutter & Jetpack Compose' 
+        : (hasKotlin ? 'Jetpack Compose' : 'Flutter');
+        
+    final analysisLabel = hasKotlin && hasDart 
+        ? 'AST & Oregex-based Analysis' 
+        : (hasKotlin ? 'Oregex-based Analysis' : 'AST-based Analysis');
+        
+    final badgeLabel = hasKotlin && hasDart 
+        ? 'Hybrid-powered' 
+        : (hasKotlin ? 'Oregex-powered' : 'AST-powered');
+        
+    final badgeEmoji = hasKotlin && hasDart 
+        ? '🚀⚡' 
+        : (hasKotlin ? '🚀' : '⚡');
 
     return '''
 <!DOCTYPE html>
@@ -30,7 +44,7 @@ class AstReportGenerator {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${isAndroidNative ? 'Jetpack Compose' : 'Flutter'} Accessibility Analysis Report</title>
+    <title>$projectTitle Accessibility Analysis Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -707,7 +721,7 @@ class AstReportGenerator {
     <div class="container">
         <div class="header">
             <div class="header-content">
-                <h1>🔍 ${isAndroidNative ? 'Jetpack Compose' : 'Flutter'} Accessibility Report</h1>
+                <h1>🔍 $projectTitle Accessibility Report</h1>
                 <div class="subtitle">
                     $analysisLabel • Generated on ${DateTime.now().toString().split('.')[0]} • Platform: ${result.platform.toString().split('.').last}
                     <span class="badge ast">$badgeLabel</span>

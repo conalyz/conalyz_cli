@@ -8,7 +8,4 @@ enum PlatformType {
   
   /// Represents desktop platform (Windows/macOS/Linux)
   desktop,
-
-  /// Represents native Android platform (Jetpack Compose / Kotlin)
-  androidNative,
 }

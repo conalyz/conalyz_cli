@@ -17,7 +17,7 @@ A powerful command-line tool for analyzing Flutter and Native Android (Jetpack C
 - **AST & Oregex Analysis**: Fast and accurate analysis using AST parsing (Flutter) and Oregex (Native Android). This hybrid approach provides deep insights for Flutter widgets while maintaining high performance for Kotlin/Compose files.
 - **Comprehensive Widget Coverage**: Supports Material, Cupertino, custom Flutter widgets, and Jetpack Compose UI components.
 - **Jetpack Compose Support**: Dedicated rules for content descriptions, touch targets, hardcoded text, semantic keys, reduced motion, and redundant semantics.
-- **Multi-Platform Support**: Analyze for mobile, web, and native Android (Kotlin) platforms.
+- **Multi-Platform Support**: Analyze for mobile and web platforms.
 - **Interactive Reports**: Generate HTML reports with filtering and detailed issue information
 - **JSON Export**: Export results for CI/CD integration
 - **Usage Tracking**: Track your analysis statistics and productivity insights
@@ -95,17 +95,14 @@ open accessibility_report/accessibility_report.html
 ### Basic Commands
 
 ```bash
-# Analyze a Flutter project
-conalyz --path /path/to/your/flutter/project/lib
+# Analyze a Mobile (Flutter or Jetpack Compose) project
+conalyz --path /path/to/your/project/lib --platform mobile
 
-# Analyze a specific Dart file
-conalyz --path lib/main.dart
+# Analyze a specific Dart or Kotlin file
+conalyz --path lib/main.dart --platform mobile
 
 # Analyze for web platform
 conalyz --path ./lib --platform web
-
-# Analyze a Native Android (Jetpack Compose) project
-conalyz --path /path/to/android/app --platform androidNative
 
 # Custom output directory
 conalyz --path ./lib --output ./reports
@@ -121,7 +118,7 @@ conalyz usage --detailed
 
 **Analysis Options:**
 - `--path, -p`: Path to Flutter/Android project directory or Dart/Kotlin file (required)
-- `--platform, -t`: Target platform: `mobile`, `web`, or `androidNative` (default: `mobile`)
+- `--platform, -t`: Target platform: `mobile` or `web` (default: `mobile`)
 - `--output, -o`: Output directory for reports (default: `accessibility_report`)
 - `--json`: Generate JSON report (default: `true`)
 - `--html`: Generate HTML report (default: `true`)

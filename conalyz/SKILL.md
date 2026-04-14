@@ -37,9 +37,8 @@ Ask the user for the path if not already provided. Common defaults:
 - `lib/main.dart` — single file
 
 Also check if they want a specific platform:
-- `--platform mobile` (default)
+- `--platform mobile` (default - covers Flutter & Jetpack Compose)
 - `--platform web`
-- `--platform androidNative` (for Jetpack Compose / Kotlin)
 
 ---
 

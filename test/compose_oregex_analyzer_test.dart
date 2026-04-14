@@ -24,7 +24,7 @@ void main() {
     Future<AnalysisResult> analyzeSource(String source) async {
       final file = File('${tempDir.path}/Test.kt');
       await file.writeAsString(source);
-      return await analyzer.analyzeFile(file.path, platform: PlatformType.androidNative);
+      return await analyzer.analyzeFile(file.path, platform: PlatformType.mobile);
     }
 
     test('should match composables properly and extract context', () async {
@@ -92,7 +92,7 @@ void main() {
          Text("Hello")
       }
       ''');
-      await customAnalyzer.analyzeFile(file.path, platform: PlatformType.androidNative);
+      await customAnalyzer.analyzeFile(file.path, platform: PlatformType.mobile);
       
       expect(captureRule.capturedContext, isNotNull);
       expect(captureRule.capturedContext!.contains('Text("Hello")'), isTrue);
