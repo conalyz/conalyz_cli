@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:conalyz/src/compose_ast_analyzer.dart';
+import 'package:conalyz/src/compose_oregex_analyzer.dart';
 import 'package:conalyz/src/jetpack_compose_rules.dart';
 import 'package:conalyz/src/platform_type.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
 
 void main() {
-  group('ComposeAnalyzer Core Parsing Tests', () {
+  group('Compose Oregex Analyzer Core Parsing Tests', () {
     late Directory tempDir;
     late ComposeAnalyzer analyzer;
 

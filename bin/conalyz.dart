@@ -7,7 +7,7 @@ import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/usage_storage_service.dart';
 import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
-import 'package:conalyz/src/compose_ast_analyzer.dart';
+import 'package:conalyz/src/compose_oregex_analyzer.dart';
 import 'package:conalyz/src/jetpack_compose_rules.dart';
 import 'package:conalyz/src/compose_redundant_semantics_rules.dart';
 
@@ -91,7 +91,7 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
 
     if (results['version']) {
       print('Conalyz CLI v$version');
-      print('A powerful Flutter accessibility analyzer');
+      print('A powerful Flutter & Jetpack Compose accessibility analyzer');
       return;
     }
 
@@ -296,7 +296,7 @@ void _showAnalysisHelp(ArgParser parser) {
   print('       conalyz usage [usage-options]');
   print('');
   print(
-      'AST-based Flutter Accessibility Analyzer with comprehensive widget coverage.');
+      'AST & Oregex-based Accessibility Analyzer with comprehensive widget coverage.');
   print(
       'Automatically tracks usage statistics including lines scanned and analysis frequency.');
   print('');

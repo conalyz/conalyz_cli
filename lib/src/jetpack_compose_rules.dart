@@ -1,6 +1,6 @@
 // Jetpack Compose specific rules
 
-import 'compose_ast_analyzer.dart'; // your new analyzer (see below)
+import 'compose_oregex_analyzer.dart'; // your new analyzer (see below)
 import 'optimized_ast_analyzer.dart';
 
 /// Rule: All clickable composables must have contentDescription
@@ -105,7 +105,14 @@ class ComposeTouchTargetRule extends ComposeAccessibilityRule {
     final code = widget.sourceCode;
     // Material3 IconButton has 48dp by default
     if (widget.type == 'IconButton') return true;
-    // Check for explicit sizing
+    // Check for explicit sizing of at least 48dp (WCAG and Material minimum)
+    // RegExp Breakdown:
+    // size\( -> matches "size(" literal
+    // (?:4[89]|5\d|[6-9]\d) -> matches sizes:
+    //   4[89] matches 48, 49
+    //   5\d matches 50, 51, ..., 59
+    //   [6-9]\d matches 60, 61, ..., 99
+    // \.dp -> matches ".dp" literal
     return code.contains('minimumInteractiveComponentSize') ||
         code.contains(RegExp(r'size\((?:4[89]|5\d|[6-9]\d)\.dp')) ||
         code.contains(RegExp(r'fillMaxWidth|fillMaxSize'));
@@ -150,6 +157,9 @@ class ComposeHardcodedTextRule extends ComposeAccessibilityRule {
   bool _hasHardcodedText(ComposeWidgetInfo widget) {
     final code = widget.sourceCode;
     // Match Text("some literal") but not Text(stringResource(...))
+    // The {2,} quantifier ensures we only flag strings with at least 2 characters.
+    // This reduces noise by ignoring single-character decorative strings like "." or "-"
+    // which might be used as spacers or delimiters and are less critical for i18n.
     return RegExp(r'Text\s*\(\s*"[^"]{2,}"').hasMatch(code) &&
         !code.contains('stringResource');
   }
@@ -385,8 +395,9 @@ class ComposeToggleableSemanticsRule extends ComposeAccessibilityRule {
   }
 
   bool _hasProperContext(ComposeWidgetInfo widget) {
-    // If the widget itself has modifier = Modifier.semantics or it's just declared.
-    // In many standalone usages, they just pass checked/onCheckedChange.
+    // This is a simplistic heuristic for identifying if a standalone toggleable
+    // is wrapped in a semantics block or has an explicit contentDescription.
+    // FIXME: This could be improved by using a more robust Oregex property parser.
     final code = widget.sourceCode;
     return code.contains('Modifier.semantics') ||
         code.contains('contentDescription'); // A simplistic heuristic

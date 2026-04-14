@@ -1,4 +1,4 @@
-# Conalyz
+# Conalyz — Flutter & Jetpack Compose Accessibility Analyzer
 
 [![Agent Skill](https://img.shields.io/badge/Agent%20Skill-SKILL.md-blue)](./SKILL.md)
 [![Pub Version](https://img.shields.io/pub/v/conalyz.svg)](https://pub.dev/packages/conalyz)
@@ -10,17 +10,47 @@
 [![GitHub issues](https://img.shields.io/github/issues/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/conalyz/conalyz_cli/pulls)
 
-A powerful command-line tool for analyzing Flutter and Native Android (Jetpack Compose) applications for accessibility issues. Conalyz uses AST-based analysis to provide comprehensive accessibility checks for Material, Cupertino, and Compose widgets, helping developers ensure their applications are accessible to all users.
+A powerful command-line tool for analyzing Flutter and Native Android (Jetpack Compose) applications for accessibility issues. Conalyz uses AST-based analysis for Flutter/Dart and Oregex-based analysis for Native Android/Kotlin to provide comprehensive accessibility checks for Material, Cupertino, and Compose widgets, helping developers ensure their applications are accessible to all users.
 
 ## Features
 
-- **AST-based Analysis**: Fast and accurate analysis using Abstract Syntax Tree parsing
-- **Comprehensive Widget Coverage**: Supports Material, Cupertino, custom Flutter widgets, and Jetpack Compose UI
-- **Multi-Platform Support**: Analyze for mobile, web, and native Android (Kotlin) platforms
+- **AST & Oregex Analysis**: Fast and accurate analysis using AST parsing (Flutter) and Oregex (Native Android). This hybrid approach provides deep insights for Flutter widgets while maintaining high performance for Kotlin/Compose files.
+- **Comprehensive Widget Coverage**: Supports Material, Cupertino, custom Flutter widgets, and Jetpack Compose UI components.
+- **Jetpack Compose Support**: Dedicated rules for content descriptions, touch targets, hardcoded text, semantic keys, reduced motion, and redundant semantics.
+- **Multi-Platform Support**: Analyze for mobile, web, and native Android (Kotlin) platforms.
 - **Interactive Reports**: Generate HTML reports with filtering and detailed issue information
 - **JSON Export**: Export results for CI/CD integration
 - **Usage Tracking**: Track your analysis statistics and productivity insights
 - **WCAG Compliance**: Validates against Web Content Accessibility Guidelines
+
+## Jetpack Compose Support
+
+Conalyz provides dedicated accessibility checks for Native Android (Kotlin) and Jetpack Compose, including:
+
+- **Missing Content Descriptions**: Ensuring `Image`, `Icon`, and `IconButton` have appropriate screen reader labels.
+- **Small Touch Targets**: Validating that interactive components meet the 48dp minimum size requirement (Material Design + WCAG).
+- **Hardcoded Text**: Flagging text literals that should use string resources (`R.string.key`) for i18n/a11y support.
+- **Missing Semantic Keys**: Identifying `LazyColumn` and `LazyRow` items that lack stable keys for TalkBack traversal.
+- **Reduced Motion Support**: Checking that animations respect system-level reduced-motion settings (`LocalReduceMotion`).
+- **Form Field Accessibility**: Ensuring `TextField` and `OutlinedTextField` have labels or placeholders.
+- **Semantic Roles**: Validating that custom clickable containers define a semantic role (e.g., `Role.Button`).
+- **Redundant Semantics**: Detecting unnecessary `mergeDescendants` or `isTraversalGroup` configurations that match defaults.
+
+## How it Works
+
+Conalyz uses a hybrid analysis engine for maximum accuracy and performance:
+
+- **AST (Abstract Syntax Tree)**: Used for Flutter and Dart files to perform deep semantic analysis of widget hierarchies and property values.
+- **Oregex (Optimized Regex)**: Used for Native Android (Kotlin) and Jetpack Compose to perform fast, robust analysis of composable structures and modifier patterns without the overhead of full Kotlin parsing.
+
+### Under the Hood (Oregex)
+
+Oregex was chosen for Kotlin and Jetpack Compose to provide high performance and easy maintenance for a wide range of accessibility patterns. The analyzer uses:
+
+- **Brace Balancing**: A custom character-by-character algorithm to accurately extract composable context, including trailing lambdas (e.g. `items { }` blocks).
+- **Comment-Aware Processing**: Logic that intelligently ignores matches inside line comments while respecting string and character literals.
+- **Optimized Lookups**: Uses binary search ($O(\log N)$) for efficient line and column mapping across large source files.
+- **Regex Heuristics**: Fine-tuned regular expressions to validate properties like touch targets (48dp+) and hardcoded text lengths (2+ characters) with minimal false positives.
 
 ## AI Agent Skill
 

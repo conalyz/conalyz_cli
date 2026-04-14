@@ -1,4 +1,4 @@
-import 'compose_ast_analyzer.dart';
+import 'compose_oregex_analyzer.dart';
 import 'optimized_ast_analyzer.dart';
 
 /// Abstract base class inspired by PR-1 comment to abstract common logic

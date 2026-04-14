@@ -1,4 +1,4 @@
-// lib/src/compose_ast_analyzer.dart
+// lib/src/compose_oregex_analyzer.dart
 
 import 'dart:io';
 import 'optimized_ast_analyzer.dart'; // reuse AccessibilityIssue and AnalysisResult
@@ -32,12 +32,11 @@ abstract class ComposeAccessibilityRule {
   List<AccessibilityIssue> check(ComposeWidgetInfo widget, String filePath);
 }
 
-/// Main AST-based analyzer for parsing Kotlin code and validating Jetpack Compose UI
+/// Main Oregex-based analyzer for parsing Kotlin code and validating Jetpack Compose UI
 /// nodes against a suite of accessibility rules. Processes `.kt` files to generate
 /// a comprehensive [AnalysisResult].
 class ComposeAnalyzer {
   final List<ComposeAccessibilityRule> rules;
-  static const int _contextLines = 30;
 
   ComposeAnalyzer({required this.rules});
 
@@ -59,6 +58,7 @@ class ComposeAnalyzer {
     final issues = <AccessibilityIssue>[];
 
     // Precompute line start offsets using native indexOf for maximum performance (O(N) with fast path)
+    // This allows us to use binary search for line/column calculation in O(log N) instead of O(N).
     final lineStarts = <int>[0];
     int nlIndex = -1;
     while ((nlIndex = fullCode.indexOf('\n', nlIndex + 1)) != -1) {
@@ -68,6 +68,8 @@ class ComposeAnalyzer {
     for (final rule in rules) {
       for (final composable in rule.targetComposables) {
         // Match the composable name followed by an opening brace or parenthesis
+        // \b ensures we don't match substrings (e.g. 'CustomImage' instead of 'Image')
+        // \s*[{(] matches the beginning of the parameter list or trailing lambda block
         final regex = RegExp('\\b${RegExp.escape(composable)}\\s*[{(]');
         final matches = regex.allMatches(fullCode);
 
@@ -117,6 +119,8 @@ class ComposeAnalyzer {
   }
 
   /// Calculates the 1-indexed line and column for a given string index using binary search (O(log N))
+  /// This is used for every reported issue, so O(log N) is significantly faster than O(N) linear search
+  /// for large files with thousands of lines.
   Map<String, int> _getLineAndColumn(int index, List<int> lineStarts) {
     int low = 0;
     int high = lineStarts.length - 1;
@@ -140,6 +144,8 @@ class ComposeAnalyzer {
 
   /// Evaluates if the line prefix contains a legitimate comment marker
   /// by skipping '//' tokens wrapped inside text literals like URLs.
+  /// Example: val url = "https://example.com" // This is a comment
+  /// Only the second '//' should be treated as a comment marker.
   bool _isInLineComment(String linePrefix) {
     bool inString = false;
     bool inChar = false;
@@ -166,6 +172,12 @@ class ComposeAnalyzer {
   /// Accurately extracts the source code context block around a composable match 
   /// using character-by-character bracket and parenthesis balancing, heavily accounting
   /// for Jetpack Compose's trailing lambda syntax.
+  /// 
+  /// How it works:
+  /// 1. Iterates from the match index, keeping track of open/closed brackets () and braces {}.
+  /// 2. Ignores brackets inside string or char literals to avoid false closing.
+  /// 3. If a block is closed, it performs a 1-character lookahead to see if a trailing lambda {} follows.
+  /// 4. If a trailing lambda is found, it continues balancing until that block is also closed.
   String _extractComposableContext(String fullCode, int matchIndex) {
     int openCount = 0;
     bool started = false;
@@ -217,6 +229,7 @@ class ComposeAnalyzer {
     }
     
     // If we didn't find any block logic (extremely rare for standard composables)
+    // We fallback to a fixed 50 character context to avoid crashing and still provide some info.
     if (!started) {
       return fullCode.substring(matchIndex, (matchIndex + 50).clamp(0, fullCode.length));
     }
