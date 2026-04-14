@@ -70,7 +70,10 @@ class ComposeAnalyzer {
         // Match the composable name followed by an opening brace or parenthesis
         // \b ensures we don't match substrings (e.g. 'CustomImage' instead of 'Image')
         // \s*[{(] matches the beginning of the parameter list or trailing lambda block
-        final regex = RegExp('\\b${RegExp.escape(composable)}\\s*[{(]');
+        // Prepend a negative lookbehind for names that don't already include a dot,
+        // to avoid duplicate matches when used as a modifier (e.g., Modifier.clickable)
+        final lookbehind = !composable.contains('.') ? r'(?<!\.\s*)' : '';
+        final regex = RegExp('$lookbehind\\b${RegExp.escape(composable)}\\s*[{(]');
         final matches = regex.allMatches(fullCode);
 
         for (final match in matches) {
@@ -143,26 +146,57 @@ class ComposeAnalyzer {
   }
 
   /// Evaluates if the line prefix contains a legitimate comment marker
-  /// by skipping '//' tokens wrapped inside text literals like URLs.
+  /// by skipping '//' tokens wrapped inside text literals like URLs, 
+  /// escaped quotes, and triple-quoted blocks.
   /// Example: val url = "https://example.com" // This is a comment
   /// Only the second '//' should be treated as a comment marker.
   bool _isInLineComment(String linePrefix) {
     bool inString = false;
+    bool inTripleString = false;
     bool inChar = false;
+    bool escaped = false;
     
-    for (int i = 0; i < linePrefix.length - 1; i++) { // check up to length - 1 to lookahead for '//'
-      String c = linePrefix[i];
+    for (int i = 0; i < linePrefix.length; i++) {
+      if (inTripleString) {
+        if (i + 2 < linePrefix.length && 
+            linePrefix[i] == '"' && 
+            linePrefix[i+1] == '"' && 
+            linePrefix[i+2] == '"') {
+          inTripleString = false;
+          i += 2;
+        }
+        continue;
+      }
       
-      // string literal toggle
-      if (c == '"' && (i == 0 || linePrefix[i-1] != '\\') && !inChar) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      
+      if (linePrefix[i] == '\\' && !inTripleString) {
+        escaped = true;
+        continue;
+      }
+      
+      // Triple string start
+      if (i + 2 < linePrefix.length && 
+          linePrefix[i] == '"' && 
+          linePrefix[i+1] == '"' && 
+          linePrefix[i+2] == '"' && 
+          !inChar && !inString) {
+        inTripleString = true;
+        i += 2;
+        continue;
+      }
+
+      String c = linePrefix[i];
+      if (c == '"' && !inChar && !inTripleString) {
         inString = !inString;
-      }
-      // char literal toggle
-      else if (c == "'" && (i == 0 || linePrefix[i-1] != '\\') && !inString) {
+      } else if (c == "'" && !inString && !inTripleString) {
         inChar = !inChar;
-      }
-      // true comment detection
-      else if (!inString && !inChar && c == '/' && linePrefix[i+1] == '/') {
+      } else if (!inString && !inChar && !inTripleString && 
+                 c == '/' && i + 1 < linePrefix.length && 
+                 linePrefix[i+1] == '/') {
         return true;
       }
     }
