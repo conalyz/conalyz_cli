@@ -1,8 +1,9 @@
-import 'package:test/test.dart';
+import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
 import 'package:conalyz/src/platform_type.dart';
-import 'package:analyzer/dart/analysis/utilities.dart';
-import 'package:analyzer/dart/analysis/features.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('ImageAccessibilityRule Tests', () {
@@ -16,10 +17,10 @@ void main() {
       const code = '''
         Image.asset('assets/image.png')
       ''';
-      
+
       final widget = _createWidgetInfo('Image', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('critical'));
       expect(issues.first.type, equals('Missing Alt Text'));
@@ -33,10 +34,11 @@ void main() {
           semanticLabel: 'A beautiful landscape',
         )
       ''';
-      
-      final widget = _createWidgetInfo('Image', code, 1, 1, {'semanticLabel': 'A beautiful landscape'});
+
+      final widget = _createWidgetInfo(
+          'Image', code, 1, 1, {'semanticLabel': 'A beautiful landscape'});
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -52,10 +54,10 @@ void main() {
       const code = '''
         TextField()
       ''';
-      
+
       final widget = _createWidgetInfo('TextField', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('critical'));
       expect(issues.first.type, equals('TextField Without Label'));
@@ -70,10 +72,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('TextField', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -85,10 +87,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('TextField', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -96,10 +98,10 @@ void main() {
       const code = '''
         TextFormField()
       ''';
-      
+
       final widget = _createWidgetInfo('TextFormField', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('critical'));
     });
@@ -119,10 +121,10 @@ void main() {
           icon: Icon(Icons.star),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('IconButton', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Button Without Label'));
@@ -137,10 +139,11 @@ void main() {
           tooltip: 'Add to favorites',
         )
       ''';
-      
-      final widget = _createWidgetInfo('IconButton', code, 1, 1, {'tooltip': 'Add to favorites'});
+
+      final widget = _createWidgetInfo(
+          'IconButton', code, 1, 1, {'tooltip': 'Add to favorites'});
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -151,10 +154,10 @@ void main() {
           child: Text('Click me'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('ElevatedButton', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -165,10 +168,10 @@ void main() {
           child: Icon(Icons.add),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('FloatingActionButton', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
     });
@@ -192,10 +195,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('GestureDetector', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('GestureDetector Without Semantics'));
@@ -213,10 +216,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('GestureDetector', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('critical'));
     });
@@ -239,13 +242,17 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Container', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
-      expect(issues, hasLength(greaterThan(0))); // May have multiple issues (contrast + theme recommendation)
+
+      expect(
+          issues,
+          hasLength(greaterThan(
+              0))); // May have multiple issues (contrast + theme recommendation)
       expect(issues.any((issue) => issue.severity == 'critical'), isTrue);
-      expect(issues.any((issue) => issue.type == 'Color Contrast Issue'), isTrue);
+      expect(
+          issues.any((issue) => issue.type == 'Color Contrast Issue'), isTrue);
       expect(issues.any((issue) => issue.rule == 'WCAG-1.4.3'), isTrue);
     });
 
@@ -256,10 +263,10 @@ void main() {
           style: TextStyle(color: Colors.blue),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('low'));
       expect(issues.first.type, equals('Theme Color Recommendation'));
@@ -272,10 +279,10 @@ void main() {
           style: TextStyle(color: Theme.of(context).colorScheme.primary),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -294,28 +301,83 @@ void main() {
           onChanged: (value) {},
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Checkbox', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Missing Checkbox Semantics'));
     });
 
-    test('should not flag CheckboxListTile with title', () {
+    test('should not flag Checkbox wrapped in MergeSemantics', () {
       const code = '''
-        CheckboxListTile(
-          title: Text('Accept terms'),
+        Widget build(BuildContext context) {
+          return MergeSemantics(
+            child: ListTile(
+              title: Text('Accept terms'),
+              trailing: Checkbox(
+                value: true,
+                onChanged: (value) {},
+              ),
+            ),
+          );
+        }
+      ''';
+
+      final widget = _createWidgetInfo('Checkbox', code, 7, 1);
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty,
+          reason:
+              'Checkbox inside MergeSemantics should be considered accessible');
+    });
+  });
+
+  group('SwitchAccessibilityRule Tests', () {
+    late SwitchAccessibilityRule rule;
+
+    setUp(() {
+      rule = SwitchAccessibilityRule();
+    });
+
+    test('should flag Switch without semantic information', () {
+      const code = '''
+        Switch(
           value: true,
           onChanged: (value) {},
         )
       ''';
-      
-      final widget = _createWidgetInfo('CheckboxListTile', code, 1, 1);
+
+      final widget = _createWidgetInfo('Switch', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
-      expect(issues, isEmpty);
+
+      expect(issues, hasLength(1));
+      expect(issues.first.severity, equals('high'));
+      expect(issues.first.type, equals('Missing Switch Semantics'));
+    });
+
+    test('should not flag Switch wrapped in MergeSemantics', () {
+      const code = '''
+        Widget build(BuildContext context) {
+          return MergeSemantics(
+            child: ListTile(
+              title: Text('Enable notifications'),
+              trailing: Switch(
+                value: true,
+                onChanged: (value) {},
+              ),
+            ),
+          );
+        }
+      ''';
+
+      final widget = _createWidgetInfo('Switch', code, 7, 1);
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty,
+          reason:
+              'Switch inside MergeSemantics should be considered accessible');
     });
   });
 
@@ -330,10 +392,10 @@ void main() {
       const code = '''
         CircularProgressIndicator()
       ''';
-      
+
       final widget = _createWidgetInfo('CircularProgressIndicator', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Missing Progress Indicator Label'));
@@ -345,10 +407,11 @@ void main() {
           semanticsLabel: 'Loading progress',
         )
       ''';
-      
-      final widget = _createWidgetInfo('LinearProgressIndicator', code, 1, 1, {'semanticsLabel': 'Loading progress'});
+
+      final widget = _createWidgetInfo('LinearProgressIndicator', code, 1, 1,
+          {'semanticsLabel': 'Loading progress'});
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -364,10 +427,10 @@ void main() {
       const code = '''
         Text("")
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Empty Text Widget'));
@@ -377,10 +440,10 @@ void main() {
       const code = '''
         Text('')
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
     });
@@ -389,10 +452,10 @@ void main() {
       const code = '''
         Text('Hello World')
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -408,10 +471,10 @@ void main() {
       const code = '''
         Text("Click Here")
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Vague Text Content'));
@@ -422,10 +485,10 @@ void main() {
       const code = '''
         Text("Read More")
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.type, equals('Vague Text Content'));
     });
@@ -434,27 +497,42 @@ void main() {
       const code = '''
         Text("Read more about accessibility guidelines")
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
 }
 
 // Helper function to create WidgetInfo for testing
-WidgetInfo _createWidgetInfo(String type, String sourceCode, int line, int column, [Map<String, dynamic>? properties]) {
+WidgetInfo _createWidgetInfo(
+    String type, String sourceCode, int line, int column,
+    [Map<String, dynamic>? properties]) {
   // Parse the source code to create a proper AST
   final parseResult = parseString(
     content: sourceCode,
     featureSet: FeatureSet.latestLanguageVersion(),
     throwIfDiagnostics: false,
   );
-  
-  // Create a mock visitor
-  final visitor = OptimizedWidgetExtractionVisitor(sourceCode, parseResult.unit, false);
-  
+
+  // Create a visitor and visit the unit to populate the widgets list
+  final visitor =
+      OptimizedWidgetExtractionVisitor(sourceCode, parseResult.unit, false);
+  parseResult.unit.visitChildren(visitor);
+
+  // Find the actual node for the widget we want to test if it's in the list
+  AstNode node = parseResult.unit;
+  try {
+    node = visitor.widgets.firstWhere((w) {
+      // Match by type name, including handling for named constructors (e.g. Image.asset)
+      return w.type == type || w.type.split('.').first == type;
+    }).node;
+  } catch (_) {
+    // If not found in the extracted widgets, fallback to the compilation unit
+  }
+
   return WidgetInfo(
     type: type,
     line: line,
@@ -462,7 +540,7 @@ WidgetInfo _createWidgetInfo(String type, String sourceCode, int line, int colum
     properties: properties ?? {},
     sourceCode: sourceCode,
     compilationUnit: parseResult.unit,
-    node: parseResult.unit, // Using compilation unit as a placeholder node
+    node: node,
     visitor: visitor,
   );
 }

@@ -1,3 +1,8 @@
+## Unreleased
+* Fixed Issue #6: Added support for MergeSemantics as a valid accessibility container for Switch, Checkbox, and other interactive widgets.
+Enhanced Accessibility Rule Logic: Improved the semantic wrapping check to handle grouped semantic nodes using the MergeSemantics pattern (a standard practice for combining controls like Switch with labels in a ListTile).
+Expanded Test Coverage: Added permanent test cases to test/optimized_ast_analyzer_test.dart and improved the test helper for more accurate widget extraction and AST node mapping.
+
 ## 0.1.2
 
 * Added an agent skill (`conalyz/SKILL.md`) for AI assistants (e.g., Claude Code, Cursor, Copilot).
