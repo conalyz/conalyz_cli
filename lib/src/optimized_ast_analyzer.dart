@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+
 import 'flutter_specific_rules.dart';
 import 'platform_type.dart';
 
@@ -687,22 +689,23 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     }
   }
 
-  /// Optimized method to check if a widget is wrapped by a Semantics widget
+  /// Optimized method to check if a widget is wrapped by a Semantics or MergeSemantics widget
   bool isWrappedWithSemantics(AstNode widgetNode) {
     // Get the line info for the widget
     final lineInfo = compilationUnit.lineInfo;
     final widgetLocation = lineInfo.getLocation(widgetNode.offset);
     final widgetLine = widgetLocation.lineNumber;
 
-    // Look for Semantics widgets that appear before this widget in the source
+    // Look for Semantics/MergeSemantics widgets that appear before this widget in the source
     for (final widget in widgets) {
-      if (widget.type == 'Semantics' && widget.line < widgetLine) {
-        // Check if this widget appears in the Semantics widget's child property
+      if ((widget.type == 'Semantics' || widget.type == 'MergeSemantics') &&
+          widget.line <= widgetLine) {
+        // Check if this widget appears in the container widget's child property
         final semanticsSourceCode = widget.sourceCode;
         final widgetSourceSnippet =
             sourceCode.substring(widgetNode.offset, widgetNode.end);
 
-        // Simple check: if the widget's source code appears within the Semantics widget's source code
+        // Simple check: if the widget's source code appears within the container widget's source code
         if (semanticsSourceCode.contains(widgetSourceSnippet)) {
           return true;
         }
@@ -777,7 +780,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
     // Accessibility and Semantics Widgets
     'ExcludeSemantics', 'Focus', 'FocusScope', 'FocusTraversalOrder',
-    'Semantics',
+    'MergeSemantics', 'Semantics',
 
     // Animation and Visual Effects
     'AnimatedContainer', 'AnimationController', 'ClipRRect', 'Hero', 'Material',
