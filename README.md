@@ -1,7 +1,7 @@
 # Conalyz — Flutter & Jetpack Compose Accessibility Analyzer
 
 [![Agent Skill](https://img.shields.io/badge/Agent%20Skill-SKILL.md-blue)](./SKILL.md)
-[![Pub Version](https://img.shields.io/pub/v/conalyz.svg)](https://pub.dev/packages/conalyz)
+[![Pub Version](https://img.shields.io/badge/version-0.2.0-blue)](https://pub.dev/packages/conalyz)
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -178,6 +178,23 @@ Conalyz checks for:
 - Focus management issues
 - Proper LazyList semantic keys and LocalReduceMotion checks (Jetpack Compose)
 - And many more...
+
+## Code Structure & Best Practices
+
+- All Jetpack Compose and Kotlin Oregex analysis code is now under `lib/src/compose/`.
+- Compose rules, redundant semantics, and analyzer logic are separated for clarity and maintainability.
+- Magic numbers (e.g., 48dp for touch targets) are defined as constants in the relevant files.
+- All classes and public methods are documented with Dart doc comments.
+- The codebase adheres to OOP, SOLID, and clean architecture principles:
+  - Each rule is a class implementing a clear interface.
+  - No business logic in UI or analyzer entrypoints.
+  - All magic numbers and strings are constants or enums.
+  - Each file has a single responsibility.
+
+## Android Native & Compose Packages
+
+- Jetpack Compose and Kotlin-specific rules are in `lib/src/compose/`.
+- If you add new Android native (non-Compose) rules, create a `lib/src/kotlin/` package and follow the same structure.
 
 ## Contributing
 

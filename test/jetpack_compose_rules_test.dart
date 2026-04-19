@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:conalyz/src/compose_oregex_analyzer.dart';
-import 'package:conalyz/src/jetpack_compose_rules.dart';
-import 'package:conalyz/src/compose_redundant_semantics_rules.dart';
+import 'package:conalyz/src/compose/compose_oregex_analyzer.dart';
+import 'package:conalyz/src/compose/jetpack_compose_rules.dart';
+import 'package:conalyz/src/compose/compose_redundant_semantics_rules.dart';
 import 'package:conalyz/src/platform_type.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
 
@@ -42,10 +42,16 @@ void main() {
       expect(result.totalIssues, 0);
     });
 
-    test('should not flag targets with fillMaxWidth', () async {
-      const source = 'Box(modifier = Modifier.fillMaxWidth()) { }';
+    test('should not flag targets with fillMaxWidth and adequate height', () async {
+      const source = 'Box(modifier = Modifier.fillMaxWidth().height(48.dp)) { }';
       final result = await analyzeSource(source, rule);
       expect(result.totalIssues, 0);
+    });
+
+    test('should flag targets with fillMaxWidth but no height', () async {
+      const source = 'Box(modifier = Modifier.fillMaxWidth()) { }';
+      final result = await analyzeSource(source, rule);
+      expect(result.totalIssues, 1);
     });
 
     test('should not flag IconButton (assumed 48dp by Material3)', () async {

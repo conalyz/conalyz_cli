@@ -7,12 +7,12 @@ import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/usage_storage_service.dart';
 import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
-import 'package:conalyz/src/compose_oregex_analyzer.dart';
-import 'package:conalyz/src/jetpack_compose_rules.dart';
-import 'package:conalyz/src/compose_redundant_semantics_rules.dart';
+import 'package:conalyz/src/compose/compose_oregex_analyzer.dart';
+import 'package:conalyz/src/compose/jetpack_compose_rules.dart';
+import 'package:conalyz/src/compose/compose_redundant_semantics_rules.dart';
 
 // Version constant
-const String version = '1.0.0';
+const String version = '0.2.0';
 
 void main(List<String> arguments) async {
   // Check if this is a usage command

@@ -311,3 +311,5 @@ After applying fixes, verify with:
 - For `insufficient_contrast` issues, suggest specific color values that meet WCAG AA (4.5:1 ratio for normal text, 3:1 for large text)
 - For custom widgets, wrap with `Semantics()` rather than modifying internal widget code
 - Suggest the user open `./conalyz_report/accessibility_report.html` for the full interactive report
+- Jetpack Compose and Kotlin-specific rules are in `lib/src/compose/`.
+- If you add new Android native (non-Compose) rules, create a `lib/src/kotlin/` package and follow the same structure.

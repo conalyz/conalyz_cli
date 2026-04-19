@@ -1,5 +1,6 @@
+// lib/src/compose/compose_redundant_semantics_rules.dart
 import 'compose_oregex_analyzer.dart';
-import 'optimized_ast_analyzer.dart';
+import '../optimized_ast_analyzer.dart';
 
 /// Abstract base class inspired by PR-1 comment to abstract common logic
 /// for checking redundant semantics configuration in Jetpack Compose.

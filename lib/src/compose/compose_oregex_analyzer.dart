@@ -1,8 +1,8 @@
-// lib/src/compose_oregex_analyzer.dart
+// lib/src/compose/compose_oregex_analyzer.dart
 
 import 'dart:io';
-import 'optimized_ast_analyzer.dart'; // reuse AccessibilityIssue and AnalysisResult
-import 'platform_type.dart';
+import '../optimized_ast_analyzer.dart'; // reuse AccessibilityIssue and AnalysisResult
+import '../platform_type.dart';
 
 /// Holds metadata about a detected Jetpack Compose UI component (e.g. composable)
 /// including its position, type, and surrounding code context for rule evaluation.

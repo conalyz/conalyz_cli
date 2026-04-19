@@ -1,6 +1,6 @@
 name: conalyz
 description: A powerful CLI tool for analyzing Flutter and Native Android (Jetpack Compose) applications for accessibility issues using AST-based and Oregex-based analysis.
-version: 1.0.0
+version: 0.2.0
 repository: https://github.com/conalyz/conalyz_cli
 issue_tracker: https://github.com/conalyz/conalyz_cli/issues
 documentation: https://github.com/conalyz/conalyz_cli#readme

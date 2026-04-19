@@ -1,7 +1,6 @@
-// Jetpack Compose specific rules
-
+// lib/src/compose/jetpack_compose_rules.dart
 import 'compose_oregex_analyzer.dart'; // your new analyzer (see below)
-import 'optimized_ast_analyzer.dart';
+import '../optimized_ast_analyzer.dart';
 
 /// Rule: All clickable composables must have contentDescription
 class ComposeContentDescriptionRule extends ComposeAccessibilityRule {
@@ -105,17 +104,25 @@ class ComposeTouchTargetRule extends ComposeAccessibilityRule {
     final code = widget.sourceCode;
     // Material3 IconButton has 48dp by default
     if (widget.type == 'IconButton') return true;
-    // Check for explicit sizing of at least 48dp (WCAG and Material minimum)
-    // RegExp Breakdown:
-    // size\( -> matches "size(" literal
-    // (?:4[89]|5\d|[6-9]\d) -> matches sizes:
-    //   4[89] matches 48, 49
-    //   5\d matches 50, 51, ..., 59
-    //   [6-9]\d matches 60, 61, ..., 99
-    // \.dp -> matches ".dp" literal
+    // Check for sizing that guarantees at least a 48x48dp interactive area.
+    // Accept:
+    // - minimumInteractiveComponentSize()
+    // - fillMaxSize()
+    // - explicit size(...) >= 48.dp
+    // - sizeIn/defaultMinSize with both minWidth and minHeight >= 48.dp
+    // - fillMaxWidth() only when paired with height/requiredHeight >= 48.dp
+    final hasExplicitSize =
+        code.contains(RegExp(r'size\((?:4[89]|5\d|[6-9]\d)\.dp'));
+    final hasMinSizeConstraints = code.contains(RegExp(
+        r'(?:sizeIn|defaultMinSize)\([^)]*minWidth\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp[^)]*minHeight\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
+    final hasFillMaxWidthWithAdequateHeight = code.contains('fillMaxWidth') &&
+        code.contains(RegExp(
+            r'(?:height|requiredHeight)\((?:4[89]|5\d|[6-9]\d)\.dp'));
     return code.contains('minimumInteractiveComponentSize') ||
-        code.contains(RegExp(r'size\((?:4[89]|5\d|[6-9]\d)\.dp')) ||
-        code.contains(RegExp(r'fillMaxWidth|fillMaxSize'));
+        code.contains('fillMaxSize') ||
+        hasExplicitSize ||
+        hasMinSizeConstraints ||
+        hasFillMaxWidthWithAdequateHeight;
   }
 }
 

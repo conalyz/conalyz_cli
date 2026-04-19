@@ -1,17 +1,10 @@
-## 1.0.0
-
-* **Unified Mobile Platform**: Flutter and Jetpack Compose analysis are now unified under the `--platform mobile` flag.
-* **Automatic Detection**: The analyzer now automatically detects `.dart` and `.kt` files within a project and runs the appropriate analysis engine.
-* **Hybrid Analysis**: Support for mixed projects containing both Flutter and Kotlin code, with results merged into a single report.
-* Removed the explicit `androidNative` platform flag to simplify the user interface.
-* Enhanced HTML reports with dynamic labeling based on detected file types.
-
 ## 0.2.0
 
-* Native Android Development Support! Added full Oregex-based support for Kotlin files and Jetpack Compose.
-* Introduced rules for Jetpack Compose (Content Descriptions, Hardcoded text, Touch Targets, Semantic Keys, Reduced Motion).
-* Added `androidNative` platform flag to the CLI (`--platform androidNative`).
-* Overall pipeline enhancements to support `.kt` alongside `.dart` files robustly.
+### Native Android & Jetpack Compose Support
+
+* Full Kotlin/Compose analysis**: Added Oregex-based accessibility rules for Jetpack Compose — including Content Descriptions, Hardcoded Text, Touch Targets, Semantic Keys, and Reduced Motion checks.
+* Automatic Detection**: The analyzer automatically detects `.dart` and `.kt` files and runs the appropriate analysis engine, with support for hybrid projects producing a single merged report.
+* Enhanced HTML Reports**: Dynamic labeling based on detected file types (Flutter, Compose, or both).
 
 ## 0.1.2
 

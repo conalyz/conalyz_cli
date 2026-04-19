@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:conalyz/src/compose_oregex_analyzer.dart';
-import 'package:conalyz/src/jetpack_compose_rules.dart';
+import 'package:conalyz/src/compose/compose_oregex_analyzer.dart';
+import 'package:conalyz/src/compose/jetpack_compose_rules.dart';
 import 'package:conalyz/src/platform_type.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
 
