@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+
 import 'flutter_specific_rules.dart';
 import 'platform_type.dart';
 
@@ -687,22 +689,23 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     }
   }
 
-  /// Optimized method to check if a widget is wrapped by a Semantics widget
+  /// Optimized method to check if a widget is wrapped by a Semantics or MergeSemantics widget
   bool isWrappedWithSemantics(AstNode widgetNode) {
     // Get the line info for the widget
     final lineInfo = compilationUnit.lineInfo;
     final widgetLocation = lineInfo.getLocation(widgetNode.offset);
     final widgetLine = widgetLocation.lineNumber;
 
-    // Look for Semantics widgets that appear before this widget in the source
+    // Look for Semantics/MergeSemantics widgets that appear before this widget in the source
     for (final widget in widgets) {
-      if (widget.type == 'Semantics' && widget.line < widgetLine) {
-        // Check if this widget appears in the Semantics widget's child property
+      if ((widget.type == 'Semantics' || widget.type == 'MergeSemantics') &&
+          widget.line <= widgetLine) {
+        // Check if this widget appears in the container widget's child property
         final semanticsSourceCode = widget.sourceCode;
         final widgetSourceSnippet =
             sourceCode.substring(widgetNode.offset, widgetNode.end);
 
-        // Simple check: if the widget's source code appears within the Semantics widget's source code
+        // Simple check: if the widget's source code appears within the container widget's source code
         if (semanticsSourceCode.contains(widgetSourceSnippet)) {
           return true;
         }
@@ -761,7 +764,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     'ExpansionTile', 'ListTile', 'RadioListTile', 'UserAccountsDrawerHeader',
 
     // Display and Media Widgets
-    'Badge', 'Card', 'Divider', 'Icon', 'Image', 'Text', 'Tooltip',
+    'Badge', 'Card', 'Divider', 'Icon', 'Image', 'Text', 'RichText', 'Tooltip',
     'VerticalDivider',
 
     // Progress and Loading Widgets
@@ -777,7 +780,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
     // Accessibility and Semantics Widgets
     'ExcludeSemantics', 'Focus', 'FocusScope', 'FocusTraversalOrder',
-    'Semantics',
+    'MergeSemantics', 'Semantics',
 
     // Animation and Visual Effects
     'AnimatedContainer', 'AnimationController', 'ClipRRect', 'Hero', 'Material',
@@ -1949,7 +1952,8 @@ class MobileTabAccessibilityRule extends AccessibilityRule {
     if (platform != PlatformType.mobile) return issues;
 
     if (widget.type == 'TabBar' &&
-        !widget.properties.containsKey('semanticLabel')) {
+        !widget.properties.containsKey('semanticLabel') &&
+        !_areAllTabsReadable(widget.node)) {
       issues.add(AccessibilityIssue(
         id: 'mobile-tab-accessibility-${widget.line}',
         severity: 'medium',
@@ -1965,6 +1969,141 @@ class MobileTabAccessibilityRule extends AccessibilityRule {
     }
 
     return issues;
+  }
+
+  bool _areAllTabsReadable(AstNode node) {
+    ArgumentList? argumentList;
+    if (node is InstanceCreationExpression) {
+      argumentList = node.argumentList;
+    } else if (node is MethodInvocation) {
+      argumentList = node.argumentList;
+    }
+
+    if (argumentList == null) return false;
+
+    Expression? tabsExpr;
+    for (final arg in argumentList.arguments) {
+      if (arg is NamedExpression && arg.name.label.name == 'tabs') {
+        tabsExpr = arg.expression;
+        break;
+      }
+    }
+
+    if (tabsExpr is ListLiteral) {
+      if (tabsExpr.elements.isEmpty) return false;
+      for (final element in tabsExpr.elements) {
+        if (element is Expression) {
+          if (!_isReadable(element)) return false;
+        } else {
+          // Spread elements, etc. - assume not readable to be safe
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  bool _isReadable(AstNode node) {
+    final visitor = _TabReadableVisitor();
+    node.accept(visitor);
+    return visitor.isReadable;
+  }
+}
+
+class _TabReadableVisitor extends RecursiveAstVisitor<void> {
+  bool isReadable = false;
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    if (isReadable) return;
+
+    final type = node.constructorName.type.name.lexeme;
+
+    if (type == 'Tab') {
+      if (_hasReadableText(node.argumentList)) {
+        isReadable = true;
+        return;
+      }
+    } else if (type == 'Text' || type == 'RichText') {
+      if (_isTextOrRichTextReadable(type, node.argumentList)) {
+        isReadable = true;
+        return;
+      }
+    }
+
+    super.visitInstanceCreationExpression(node);
+  }
+
+  bool _hasReadableText(ArgumentList argumentList) {
+    for (final arg in argumentList.arguments) {
+      if (arg is NamedExpression && arg.name.label.name == 'text') {
+        final value = arg.expression;
+        if (value is StringLiteral) {
+          if (value.stringValue != null && value.stringValue!.isNotEmpty) {
+            return true;
+          }
+        } else {
+          // Non-literal expression, assume it provides text
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _isTextOrRichTextReadable(String type, ArgumentList argumentList) {
+    if (type == 'Text') {
+      if (argumentList.arguments.isNotEmpty) {
+        final firstArg = argumentList.arguments.first;
+        if (firstArg is StringLiteral) {
+          if (firstArg.stringValue != null &&
+              firstArg.stringValue!.isNotEmpty) {
+            return true;
+          }
+        } else if (firstArg is! NamedExpression) {
+          // Positional argument that's not a literal
+          return true;
+        }
+      }
+    }
+
+    // Check for 'text' property
+    for (final arg in argumentList.arguments) {
+      if (arg is NamedExpression && arg.name.label.name == 'text') {
+        final value = arg.expression;
+        if (value is StringLiteral) {
+          if (value.stringValue != null && value.stringValue!.isNotEmpty) {
+            return true;
+          }
+        } else {
+          // Non-literal expression
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (isReadable) return;
+
+    final name = node.methodName.name;
+    if (name == 'Tab') {
+      if (_hasReadableText(node.argumentList)) {
+        isReadable = true;
+        return;
+      }
+    } else if (name == 'Text' || name == 'RichText') {
+      if (_isTextOrRichTextReadable(name, node.argumentList)) {
+        isReadable = true;
+        return;
+      }
+    }
+
+    super.visitMethodInvocation(node);
   }
 }
 

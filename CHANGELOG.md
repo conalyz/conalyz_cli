@@ -1,4 +1,10 @@
-## 0.2.0
+
+## Unreleased
+* Fixed Issue #6: Added support for MergeSemantics as a valid accessibility container for Switch, Checkbox, and other interactive widgets.
+Enhanced Accessibility Rule Logic: Improved the semantic wrapping check to handle grouped semantic nodes using the MergeSemantics pattern (a standard practice for combining controls like Switch with labels in a ListTile).
+Expanded Test Coverage: Added permanent test cases to test/optimized_ast_analyzer_test.dart and improved the test helper for more accurate widget extraction and AST node mapping.
+* Fixed Issue #7: Resolved false positive in TabBar accessibility analysis:* Suppressed missing semantic label warnings when all tabs contain readable text (text property or nested Text/RichText widgets).
+* Added RichText to core Flutter widgets identified by the analyzer.
 
 ### Native Android & Jetpack Compose Support
 
