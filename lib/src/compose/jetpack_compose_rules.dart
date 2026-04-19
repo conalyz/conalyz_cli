@@ -47,9 +47,15 @@ class ComposeContentDescriptionRule extends ComposeAccessibilityRule {
 
   bool _hasContentDescription(ComposeWidgetInfo widget) {
     final code = widget.sourceCode;
-    return code.contains('contentDescription') &&
-        !code.contains('contentDescription = null') &&
-        !code.contains('contentDescription = ""');
+    final match = RegExp(
+      r'contentDescription\s*=\s*([^,\n\)]+|"[^"]*"|' "'" r"[^']*'" r')',
+    ).firstMatch(code);
+    if (match == null) return false;
+    final value = match.group(1)?.trim();
+    return value != null &&
+        value != 'null' &&
+        value != '""' &&
+        value != "''";
   }
 }
 

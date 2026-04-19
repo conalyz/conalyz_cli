@@ -57,6 +57,9 @@ class ComposeAnalyzer {
     final fullCode = await file.readAsString();
     final issues = <AccessibilityIssue>[];
 
+    // Precompute block comment ranges to skip matches inside /* ... */
+    final blockCommentRanges = _computeBlockCommentRanges(fullCode);
+
     // Precompute line start offsets using native indexOf for maximum performance (O(N) with fast path)
     // This allows us to use binary search for line/column calculation in O(log N) instead of O(N).
     final lineStarts = <int>[0];
@@ -70,13 +73,22 @@ class ComposeAnalyzer {
         // Match the composable name followed by an opening brace or parenthesis
         // \b ensures we don't match substrings (e.g. 'CustomImage' instead of 'Image')
         // \s*[{(] matches the beginning of the parameter list or trailing lambda block
-        // Prepend a negative lookbehind for names that don't already include a dot,
-        // to avoid duplicate matches when used as a modifier (e.g., Modifier.clickable)
-        final lookbehind = !composable.contains('.') ? r'(?<!\.\s*)' : '';
-        final regex = RegExp('$lookbehind\\b${RegExp.escape(composable)}\\s*[{(]');
+        // We filter out member-access matches (e.g., Modifier.clickable) post-hoc
+        // instead of using lookbehind, which Dart does not reliably support.
+        final regex = RegExp('\\b${RegExp.escape(composable)}\\s*[{(]');
         final matches = regex.allMatches(fullCode);
 
         for (final match in matches) {
+           // Skip member-access matches for composables that don't contain a dot
+           if (!composable.contains('.')) {
+             var precedingIndex = match.start - 1;
+             while (precedingIndex >= 0 && fullCode[precedingIndex].trim().isEmpty) {
+               precedingIndex--;
+             }
+             if (precedingIndex >= 0 && fullCode[precedingIndex] == '.') {
+               continue;
+             }
+           }
            // Skip if it is embedded in a line comment
            int lineStart = fullCode.lastIndexOf('\n', match.start);
            lineStart = lineStart == -1 ? 0 : lineStart + 1;
@@ -84,7 +96,12 @@ class ComposeAnalyzer {
            if (_isInLineComment(linePrefix)) {
              continue; // inside a line comment
            }
-           
+
+           // Skip if inside a block comment (/* ... */)
+           if (_isInBlockComment(match.start, blockCommentRanges)) {
+             continue;
+           }
+
            // Extract block accurately using brace balancing
            String context = _extractComposableContext(fullCode, match.start);
            
@@ -203,6 +220,26 @@ class ComposeAnalyzer {
     return false;
   }
 
+  /// Precomputes all block comment ranges (/* ... */) in the source code.
+  /// Returns a list of [start, end] pairs sorted by start offset.
+  List<List<int>> _computeBlockCommentRanges(String code) {
+    final ranges = <List<int>>[];
+    final regex = RegExp(r'/\*[\s\S]*?\*/');
+    for (final match in regex.allMatches(code)) {
+      ranges.add([match.start, match.end]);
+    }
+    return ranges;
+  }
+
+  /// Returns true if the given offset falls inside any precomputed block comment range.
+  bool _isInBlockComment(int offset, List<List<int>> ranges) {
+    for (final range in ranges) {
+      if (offset >= range[0] && offset < range[1]) return true;
+      if (range[0] > offset) break; // ranges are sorted
+    }
+    return false;
+  }
+
   /// Accurately extracts the source code context block around a composable match 
   /// using character-by-character bracket and parenthesis balancing, heavily accounting
   /// for Jetpack Compose's trailing lambda syntax.
@@ -265,7 +302,8 @@ class ComposeAnalyzer {
     // If we didn't find any block logic (extremely rare for standard composables)
     // We fallback to a fixed 50 character context to avoid crashing and still provide some info.
     if (!started) {
-      return fullCode.substring(matchIndex, (matchIndex + 50).clamp(0, fullCode.length));
+      final end = (matchIndex + 50).clamp(0, fullCode.length);
+      return fullCode.substring(matchIndex, end);
     }
     
     return fullCode.substring(matchIndex, endIndex + 1);
