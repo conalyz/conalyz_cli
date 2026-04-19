@@ -439,6 +439,80 @@ void main() {
       expect(issues, isEmpty);
     });
   });
+
+  group('ExcludeSemanticsRule Tests', () {
+    late ExcludeSemanticsRule rule;
+
+    setUp(() {
+      rule = ExcludeSemanticsRule();
+    });
+
+    test('should flag redundant ExcludeSemantics', () {
+      const code = '''
+        ExcludeSemantics(
+          excluding: false,
+          child: Text('Hidden'),
+        )
+      ''';
+
+      final widget = _createWidgetInfo('ExcludeSemantics', code, 1, 1, {'excluding': false});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, hasLength(1));
+      expect(issues.first.type, equals('Redundant ExcludeSemantics'));
+    });
+
+    test('should not flag valid ExcludeSemantics', () {
+      const code = '''
+        ExcludeSemantics(
+          excluding: true,
+          child: Text('Hidden'),
+        )
+      ''';
+
+      final widget = _createWidgetInfo('ExcludeSemantics', code, 1, 1, {'excluding': true});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+  });
+
+  group('BlockSemanticsRule Tests', () {
+    late BlockSemanticsRule rule;
+
+    setUp(() {
+      rule = BlockSemanticsRule();
+    });
+
+    test('should flag redundant BlockSemantics', () {
+      const code = '''
+        BlockSemantics(
+          blocking: false,
+          child: Text('Visible'),
+        )
+      ''';
+
+      final widget = _createWidgetInfo('BlockSemantics', code, 1, 1, {'blocking': false});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, hasLength(1));
+      expect(issues.first.type, equals('Redundant BlockSemantics'));
+    });
+
+    test('should not flag valid BlockSemantics', () {
+      const code = '''
+        BlockSemantics(
+          blocking: true,
+          child: Text('Visible'),
+        )
+      ''';
+
+      final widget = _createWidgetInfo('BlockSemantics', code, 1, 1, {'blocking': true});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+  });
 }
 
 // Helper function to create WidgetInfo for testing

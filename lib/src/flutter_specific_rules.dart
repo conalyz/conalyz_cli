@@ -582,3 +582,92 @@ class TextScalingSupportRule extends AccessibilityRule {
     return false;
   }
 }
+
+class ExcludeSemanticsRule extends AccessibilityRule {
+  @override
+  String get ruleId => 'exclude-semantics';
+
+  @override
+  String get description => 'ExcludeSemantics should be used intentionally';
+
+  @override
+  List<String> get targetWidgets => ['ExcludeSemantics'];
+
+  @override
+  List<AccessibilityIssue> check(
+      WidgetInfo widget, String filePath, PlatformType platform) {
+    final issues = <AccessibilityIssue>[];
+
+    if (widget.type == 'ExcludeSemantics') {
+      if (_isRedundant(widget)) {
+        issues.add(AccessibilityIssue(
+          id: 'exclude-semantics-redundant-${widget.line}',
+          severity: 'low',
+          type: 'Redundant ExcludeSemantics',
+          message: 'ExcludeSemantics with excluding: false is redundant',
+          file: filePath,
+          line: widget.line,
+          column: widget.column,
+          rule: ruleId,
+          suggestion: 'Remove ExcludeSemantics if excluding is false',
+        ));
+      }
+    }
+
+    return issues;
+  }
+
+
+  bool _isRedundant(WidgetInfo widget) {
+    if (widget.properties.containsKey('excluding')) {
+      final excluding = widget.properties['excluding'];
+      // Check for boolean literal false
+      return excluding == false || excluding.toString() == 'false';
+    }
+    return false;
+  }
+}
+
+class BlockSemanticsRule extends AccessibilityRule {
+  @override
+  String get ruleId => 'block-semantics';
+
+  @override
+  String get description => 'BlockSemantics should be used intentionally';
+
+  @override
+  List<String> get targetWidgets => ['BlockSemantics'];
+
+  @override
+  List<AccessibilityIssue> check(
+      WidgetInfo widget, String filePath, PlatformType platform) {
+    final issues = <AccessibilityIssue>[];
+
+    if (widget.type == 'BlockSemantics') {
+      if (_isRedundant(widget)) {
+        issues.add(AccessibilityIssue(
+          id: 'block-semantics-redundant-${widget.line}',
+          severity: 'low',
+          type: 'Redundant BlockSemantics',
+          message: 'BlockSemantics with blocking: false is redundant',
+          file: filePath,
+          line: widget.line,
+          column: widget.column,
+          rule: ruleId,
+          suggestion: 'Remove BlockSemantics if blocking is false',
+        ));
+      }
+    }
+
+    return issues;
+  }
+
+  bool _isRedundant(WidgetInfo widget) {
+    if (widget.properties.containsKey('blocking')) {
+      final blocking = widget.properties['blocking'];
+      // Check for boolean literal false
+      return blocking == false || blocking.toString() == 'false';
+    }
+    return false;
+  }
+}

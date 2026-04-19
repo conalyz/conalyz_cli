@@ -15,6 +15,8 @@ Tests for Flutter-specific accessibility rules including:
 - `LiveRegionRule` - Tests dynamic content is announced to assistive technology
 - `TextScalingSupportRule` - Tests text scales properly with system font size settings
 - `ScaffoldNavigationRule` - Tests scaffolds have clear navigation elements
+- `ExcludeSemanticsRule` - Tests proper usage of ExcludeSemantics
+- `BlockSemanticsRule` - Tests proper usage of BlockSemantics
 
 ### 2. **optimized_ast_analyzer_test.dart**
 Tests for core accessibility analyzer rules including:
