@@ -183,12 +183,12 @@ Conalyz checks for:
 
 - All Jetpack Compose and Kotlin Oregex analysis code is now under `lib/src/compose/`.
 - Compose rules, redundant semantics, and analyzer logic are separated for clarity and maintainability.
-- Magic numbers (e.g., 48dp for touch targets) are defined as constants in the relevant files.
+- Some Compose accessibility thresholds (for example, 48dp touch-target checks) are currently expressed inline in rule strings/regex, so related values should be kept consistent when rules are updated.
 - All classes and public methods are documented with Dart doc comments.
 - The codebase adheres to OOP, SOLID, and clean architecture principles:
   - Each rule is a class implementing a clear interface.
   - No business logic in UI or analyzer entrypoints.
-  - All magic numbers and strings are constants or enums.
+  - Repeated values should be extracted into constants or enums where practical, but some Compose rule thresholds are currently inlined.
   - Each file has a single responsibility.
 
 ## Android Native & Compose Packages
