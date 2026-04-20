@@ -8,9 +8,9 @@ Expanded Test Coverage: Added permanent test cases to test/optimized_ast_analyze
 
 ### Native Android & Jetpack Compose Support
 
-* Full Kotlin/Compose analysis**: Added Oregex-based accessibility rules for Jetpack Compose — including Content Descriptions, Hardcoded Text, Touch Targets, Semantic Keys, and Reduced Motion checks.
-* Automatic Detection**: The analyzer automatically detects `.dart` and `.kt` files and runs the appropriate analysis engine, with support for hybrid projects producing a single merged report.
-* Enhanced HTML Reports**: Dynamic labeling based on detected file types (Flutter, Compose, or both).
+* Full Kotlin/Compose analysis: Added Oregex-based accessibility rules for Jetpack Compose — including Content Descriptions, Hardcoded Text, Touch Targets, Semantic Keys, and Reduced Motion checks.
+* Automatic Detection: The analyzer automatically detects `.dart` and `.kt` files and runs the appropriate analysis engine, with support for hybrid projects producing a single merged report.
+* Enhanced HTML Reports: Dynamic labeling based on detected file types (Flutter, Compose, or both).
 
 ## 0.1.2
 
