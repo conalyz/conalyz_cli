@@ -7,9 +7,12 @@ import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/usage_storage_service.dart';
 import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
+import 'package:conalyz/src/compose/compose_oregex_analyzer.dart';
+import 'package:conalyz/src/compose/jetpack_compose_rules.dart';
+import 'package:conalyz/src/compose/compose_redundant_semantics_rules.dart';
 
 // Version constant
-const String version = '1.0.0';
+const String version = '0.2.0';
 
 void main(List<String> arguments) async {
   // Check if this is a usage command
@@ -88,7 +91,7 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
 
     if (results['version']) {
       print('Conalyz CLI v$version');
-      print('A powerful Flutter accessibility analyzer');
+      print('A powerful Flutter & Jetpack Compose accessibility analyzer');
       return;
     }
 
@@ -123,8 +126,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     }
 
     final isFile = pathEntity == FileSystemEntityType.file;
-    if (isFile && !projectPath.endsWith('.dart')) {
-      print('Error: File must be a Dart file (.dart): $projectPath');
+    if (isFile && !projectPath.endsWith('.dart') && !projectPath.endsWith('.kt')) {
+      print('Error: File must be a Dart file (.dart) or Kotlin file (.kt): $projectPath');
       exit(1);
     }
 
@@ -135,31 +138,89 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     }
 
     if (isFile) {
-      print('🔍 Analyzing Dart file for accessibility issues: ${projectPath.split('/').last}');
+      final ext = projectPath.split('.').last;
+      print('🔍 Analyzing $ext file for accessibility issues: ${projectPath.split('/').last}');
     } else {
-      print('🔍 Analyzing Flutter project for accessibility issues...');
+      print('🔍 Analyzing project for accessibility issues (Platform: $platform)...');
     }
+    
     if (enableDebug) {
       print('📁 Project path: $projectPath');
       print('🎯 Target platform: $platform');
       print('');
     }
 
-    // Create optimized analyzer with built-in rules (includes all latest rules and widget recognition)
-    final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
-
     final startTime = DateTime.now();
+    late AnalysisResult analysisResult;
 
-    // Analyze the project or file
-    final analysisResult = isFile
-        ? await analyzer.analyzeFile(
-            projectPath,
-            platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
-          )
-        : await analyzer.analyzeProject(
-            projectPath,
-            platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
-          );
+    if (platform == 'mobile') {
+      final isDirectory = FileSystemEntity.isDirectorySync(projectPath);
+      
+      bool hasDart = false;
+      bool hasKotlin = false;
+      
+      if (isDirectory) {
+        final dir = Directory(projectPath);
+        await for (final entity in dir.list(recursive: true)) {
+          if (entity is File) {
+            if (entity.path.endsWith('.dart')) hasDart = true;
+            if (entity.path.endsWith('.kt')) hasKotlin = true;
+          }
+          if (hasDart && hasKotlin) break;
+        }
+      } else {
+        hasDart = projectPath.endsWith('.dart');
+        hasKotlin = projectPath.endsWith('.kt');
+      }
+
+      AnalysisResult? dartResult;
+      AnalysisResult? kotlinResult;
+
+      if (hasDart) {
+        final flutterAnalyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
+        dartResult = isFile 
+            ? await flutterAnalyzer.analyzeFile(projectPath, platform: PlatformType.mobile)
+            : await flutterAnalyzer.analyzeProject(projectPath, platform: PlatformType.mobile);
+      }
+
+      if (hasKotlin) {
+        final composeRules = [
+          ComposeContentDescriptionRule(),
+          ComposeTouchTargetRule(),
+          ComposeHardcodedTextRule(),
+          ComposeLazyListSemanticKeyRule(),
+          ComposeReducedMotionRule(),
+          ComposeTextFieldLabelRule(),
+          ComposeClickableRoleRule(),
+          ComposeToggleableSemanticsRule(),
+          ComposeRedundantMergeDescendantsRule(),
+          ComposeRedundantIsTraversalGroupRule(),
+        ];
+        final composeAnalyzer = ComposeAnalyzer(rules: composeRules);
+        kotlinResult = isFile
+            ? await composeAnalyzer.analyzeFile(projectPath, platform: PlatformType.mobile)
+            : await composeAnalyzer.analyzeProject(projectPath, platform: PlatformType.mobile);
+      }
+
+      if (dartResult != null && kotlinResult != null) {
+        analysisResult = _mergeAnalysisResults(dartResult, kotlinResult);
+      } else {
+        analysisResult = dartResult ?? kotlinResult ?? _emptyResult(PlatformType.mobile, projectPath);
+      }
+    } else {
+      // web logic
+      final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
+
+      analysisResult = isFile
+          ? await analyzer.analyzeFile(
+              projectPath,
+              platform: PlatformType.web,
+            )
+          : await analyzer.analyzeProject(
+              projectPath,
+              platform: PlatformType.web,
+            );
+    }
 
     final endTime = DateTime.now();
     final duration = endTime.difference(startTime);
@@ -264,7 +325,7 @@ void _showAnalysisHelp(ArgParser parser) {
   print('       conalyz usage [usage-options]');
   print('');
   print(
-      'AST-based Flutter Accessibility Analyzer with comprehensive widget coverage.');
+      'AST & Oregex-based Accessibility Analyzer with comprehensive widget coverage.');
   print(
       'Automatically tracks usage statistics including lines scanned and analysis frequency.');
   print('');
@@ -279,7 +340,7 @@ void _showAnalysisHelp(ArgParser parser) {
   print('');
   print('Examples:');
   print(
-      '  conalyz --path ./my_app         # Analyze Flutter project for mobile');
+      '  conalyz --path ./my_app         # Analyze Flutter or Compose project for mobile');
   print(
       '  conalyz --path ./my_app --platform web  # Analyze for web platform');
   print(
@@ -290,9 +351,43 @@ void _showAnalysisHelp(ArgParser parser) {
       '  conalyz usage --detailed        # View detailed usage analytics');
   print('');
   print('Features:');
-  print('  • Comprehensive Flutter widget accessibility analysis');
-  print('  • Support for both mobile and web platforms');
+  print('  • Comprehensive Flutter/Compose widget accessibility analysis');
+  print('  • Support for mobile and web platforms');
   print('  • Automatic usage tracking (lines scanned, analysis time)');
   print('  • JSON and HTML report generation');
   print('  • Detailed usage statistics and productivity insights');
+}
+
+/// Merges two AnalysisResults into one
+AnalysisResult _mergeAnalysisResults(AnalysisResult a, AnalysisResult b) {
+  final mergedIssues = [...a.issues, ...b.issues];
+  final mergedFiles = {...a.analyzedFiles, ...b.analyzedFiles}.toList();
+  final mergedSeverity = <String, int>{};
+  
+  for (final severity in ['critical', 'high', 'medium', 'low']) {
+    mergedSeverity[severity] = (a.issuesBySeverity[severity] ?? 0) + (b.issuesBySeverity[severity] ?? 0);
+  }
+
+  return AnalysisResult(
+    totalIssues: a.totalIssues + b.totalIssues,
+    issuesBySeverity: mergedSeverity,
+    issues: mergedIssues,
+    analyzedFiles: mergedFiles,
+    timestamp: a.timestamp,
+    platform: a.platform,
+    linesScanned: a.linesScanned + b.linesScanned,
+  );
+}
+
+/// Returns an empty AnalysisResult
+AnalysisResult _emptyResult(PlatformType platform, String projectPath) {
+  return AnalysisResult(
+    totalIssues: 0,
+    issuesBySeverity: {'critical': 0, 'high': 0, 'medium': 0, 'low': 0},
+    issues: [],
+    analyzedFiles: [projectPath],
+    timestamp: DateTime.now().toIso8601String(),
+    platform: platform,
+    linesScanned: 0,
+  );
 }

@@ -1,13 +1,13 @@
 ---
 name: conalyz
-description: Analyze Flutter and Dart projects for accessibility issues using conalyz. Use this skill when the user asks to check accessibility, audit widgets, find WCAG issues, or improve accessibility in their Flutter app. Triggers on phrases like "check accessibility", "audit my Flutter app", "find accessibility issues", "WCAG compliance", or any mention of conalyz.
+description: Analyze Flutter, Dart, and Native Android (Jetpack Compose/Kotlin) projects for accessibility issues using conalyz. Use this skill when the user asks to check accessibility, audit widgets, find WCAG issues, or improve accessibility in their app. Triggers on phrases like "check accessibility", "audit my app", "find accessibility issues", "WCAG compliance", or any mention of conalyz.
 ---
 
-# Conalyz — Flutter Accessibility Analyzer
+# Conalyz — Flutter & Jetpack Compose Accessibility Analyzer
 
 ## Overview
 
-Conalyz is an AST-based CLI tool that scans Flutter/Dart code for accessibility issues and generates detailed JSON + HTML reports. This skill runs conalyz, interprets results, prioritizes fixes, and generates corrected Dart code.
+Conalyz is an AST & Oregex-based CLI tool that scans Flutter/Dart (AST-based) and Native Android/Kotlin (Oregex-based) code for accessibility issues and generates detailed JSON + HTML reports. This skill runs conalyz, interprets results, prioritizes fixes, and generates corrected code.
 
 ---
 
@@ -37,7 +37,7 @@ Ask the user for the path if not already provided. Common defaults:
 - `lib/main.dart` — single file
 
 Also check if they want a specific platform:
-- `--platform mobile` (default)
+- `--platform mobile` (default - covers Flutter & Jetpack Compose)
 - `--platform web`
 
 ---
@@ -99,7 +99,7 @@ Then group issues by file so the user sees the full picture per file rather than
 
 ## Step 6: Generate fixes
 
-For each critical and high issue, read the affected file and generate corrected Dart code.
+For each critical and high issue, read the affected file and generate corrected Dart or Kotlin code.
 
 ### Common fix patterns:
 
@@ -159,6 +159,57 @@ TextField(
 )
 ```
 
+**Missing contentDescription on Compose Image:**
+```kotlin
+// Before
+Image(painter = painterResource(id = R.drawable.logo), contentDescription = null)
+
+// After
+Image(painter = painterResource(id = R.drawable.logo), contentDescription = "App logo")
+```
+
+**Small Touch Target in Compose:**
+```kotlin
+// Before
+IconButton(onClick = _search) { Icon(Icons.Search, null) }
+
+// After (Material3 ensure minimum 48dp)
+IconButton(onClick = _search, modifier = Modifier.minimumInteractiveComponentSize()) {
+  Icon(Icons.Search, contentDescription = "Search")
+}
+```
+
+**Hardcoded Text in Compose:**
+```kotlin
+// Before
+Text("Welcome to my app")
+
+// After
+Text(stringResource(R.string.welcome_message))
+```
+
+**Missing Semantic Keys in Lazy List:**
+```kotlin
+// Before
+LazyColumn {
+  items(items) { item -> item.content() }
+}
+
+// After
+LazyColumn {
+  items(items, key = { it.id }) { item -> item.content() }
+}
+```
+
+**Redundant mergeDescendants configuration:**
+```kotlin
+// Before
+Modifier.semantics(mergeDescendants = false) { ... }
+
+// After (Remove redundant configuration)
+Modifier.semantics { ... }
+```
+
 ---
 
 ## Step 7: Apply fixes (with user confirmation)
@@ -170,6 +221,16 @@ After applying, re-run conalyz to verify the issue count dropped:
 ```bash
 conalyz --path <PATH> --json --output ./conalyz_report_after
 ```
+
+---
+
+## Kotlin/Compose Accessibility Tips
+
+- **TalkBack traversal**: Use `Modifier.semantics(mergeDescendants = true)` for unified accessibility nodes in complex Row/Column layouts.
+- **Custom Clickables**: Always provide `Role.Button` or similar for custom interactive modifiers using `role = Role.Button`.
+- **String Resources**: Encourage the use of `stringResource(R.string.key)` over hardcoded strings for better internationalization and screen reader support.
+- **Accessibility Debugging**: Suggest the user use the **Layout Inspector** in Android Studio to inspect the semantics tree.
+- **LocalReduceMotion**: Use `LocalReduceMotion.current.enabled` to conditionalize heavy animations.
 
 ---
 
@@ -250,3 +311,5 @@ After applying fixes, verify with:
 - For `insufficient_contrast` issues, suggest specific color values that meet WCAG AA (4.5:1 ratio for normal text, 3:1 for large text)
 - For custom widgets, wrap with `Semantics()` rather than modifying internal widget code
 - Suggest the user open `./conalyz_report/accessibility_report.html` for the full interactive report
+- Jetpack Compose and Kotlin-specific rules are in `lib/src/compose/`.
+- If you add new Android native (non-Compose) rules, create a `lib/src/kotlin/` package and follow the same structure.
