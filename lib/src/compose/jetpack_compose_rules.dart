@@ -169,11 +169,20 @@ class ComposeHardcodedTextRule extends ComposeAccessibilityRule {
 
   bool _hasHardcodedText(ComposeWidgetInfo widget) {
     final code = widget.sourceCode;
-    // Match Text("some literal") but not Text(stringResource(...))
+    // Match either:
+    // - Text("some literal")
+    // - Text(text = "some literal")
+    // but not Text(stringResource(...)) or Text(text = stringResource(...)).
     // The {2,} quantifier ensures we only flag strings with at least 2 characters.
     // This reduces noise by ignoring single-character decorative strings like "." or "-"
     // which might be used as spacers or delimiters and are less critical for i18n.
-    return RegExp(r'Text\s*\(\s*"[^"]{2,}"').hasMatch(code) &&
+    final hasPositionalHardcodedText =
+        RegExp(r'Text\s*\(\s*"[^"]{2,}"').hasMatch(code);
+    final hasNamedHardcodedText =
+        RegExp(r'Text\s*\([\s\S]*?\btext\s*=\s*"[^"]{2,}"', dotAll: true)
+            .hasMatch(code);
+
+    return (hasPositionalHardcodedText || hasNamedHardcodedText) &&
         !code.contains('stringResource');
   }
 }
