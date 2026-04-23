@@ -45,17 +45,36 @@ class ComposeContentDescriptionRule extends ComposeAccessibilityRule {
     return issues;
   }
 
+  bool _isEffectivelyEmptyStringLiteral(String value) {
+    if (value.length < 2) return false;
+
+    final startsWithDoubleQuote = value.startsWith('"');
+    final endsWithDoubleQuote = value.endsWith('"');
+    final startsWithSingleQuote = value.startsWith("'");
+    final endsWithSingleQuote = value.endsWith("'");
+
+    if ((startsWithDoubleQuote && endsWithDoubleQuote) ||
+        (startsWithSingleQuote && endsWithSingleQuote)) {
+      final unquoted = value.substring(1, value.length - 1).trim();
+      return unquoted.isEmpty;
+    }
+
+    return false;
+  }
+
   bool _hasContentDescription(ComposeWidgetInfo widget) {
     final code = widget.sourceCode;
     final match = RegExp(
       r'contentDescription\s*=\s*([^,\n\)]+|"[^"]*"|' "'" r"[^']*'" r')',
     ).firstMatch(code);
     if (match == null) return false;
+
     final value = match.group(1)?.trim();
     return value != null &&
         value != 'null' &&
         value != '""' &&
-        value != "''";
+        value != "''" &&
+        !_isEffectivelyEmptyStringLiteral(value);
   }
 }
 
