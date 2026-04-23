@@ -118,12 +118,12 @@ class ComposeTouchTargetRule extends ComposeAccessibilityRule {
     // - sizeIn/defaultMinSize with both minWidth and minHeight >= 48.dp
     // - fillMaxWidth() only when paired with height/requiredHeight >= 48.dp
     final hasExplicitSize =
-        code.contains(RegExp(r'size\((?:4[89]|5\d|[6-9]\d)\.dp'));
+        code.contains(RegExp(r'size\(\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
     final hasMinSizeConstraints = code.contains(RegExp(
         r'(?:sizeIn|defaultMinSize)\([^)]*minWidth\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp[^)]*minHeight\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
     final hasFillMaxWidthWithAdequateHeight = code.contains('fillMaxWidth') &&
         code.contains(RegExp(
-            r'(?:height|requiredHeight)\((?:4[89]|5\d|[6-9]\d)\.dp'));
+            r'(?:height|requiredHeight)\(\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
     return code.contains('minimumInteractiveComponentSize') ||
         code.contains('fillMaxSize') ||
         hasExplicitSize ||
