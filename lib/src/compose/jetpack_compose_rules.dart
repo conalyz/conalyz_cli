@@ -120,7 +120,7 @@ class ComposeTouchTargetRule extends ComposeAccessibilityRule {
     final hasExplicitSize =
         code.contains(RegExp(r'size\(\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
     final hasMinSizeConstraints = code.contains(RegExp(
-        r'(?:sizeIn|defaultMinSize)\([^)]*minWidth\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp[^)]*minHeight\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
+        r'(?:sizeIn|defaultMinSize)\((?=[^)]*minWidth\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp)(?=[^)]*minHeight\s*=\s*(?:4[89]|5\d|[6-9]\d)\.dp)[^)]*\)'));
     final hasFillMaxWidthWithAdequateHeight = code.contains('fillMaxWidth') &&
         code.contains(RegExp(
             r'(?:height|requiredHeight)\(\s*(?:4[89]|5\d|[6-9]\d)\.dp'));
