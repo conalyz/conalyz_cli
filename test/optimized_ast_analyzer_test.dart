@@ -223,6 +223,56 @@ void main() {
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('critical'));
     });
+
+    test('should ignore GestureDetector when excludeFromSemantics is true', () {
+      const code = '''
+        GestureDetector(
+          excludeFromSemantics: true,
+          onTap: () {},
+          child: Container(
+            width: 100,
+            height: 100,
+            color: Colors.blue,
+          ),
+        )
+      ''';
+
+      final widget = _createWidgetInfo(
+        'GestureDetector',
+        code,
+        1,
+        1,
+        {'excludeFromSemantics': true},
+      );
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+
+    test('should flag GestureDetector when excludeFromSemantics is false', () {
+      const code = '''
+        GestureDetector(
+          excludeFromSemantics: false,
+          onTap: () {},
+          child: Container(
+            width: 100,
+            height: 100,
+            color: Colors.blue,
+          ),
+        )
+      ''';
+
+      final widget = _createWidgetInfo(
+        'GestureDetector',
+        code,
+        1,
+        1,
+        {'excludeFromSemantics': false},
+      );
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, hasLength(1));
+    });
   });
 
   group('ColorContrastRule Tests', () {
