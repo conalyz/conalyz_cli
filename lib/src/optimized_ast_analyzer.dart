@@ -1344,6 +1344,12 @@ class GestureDetectorAccessibilityRule extends AccessibilityRule {
       WidgetInfo widget, String filePath, PlatformType platform) {
     final issues = <AccessibilityIssue>[];
 
+    // When excludeFromSemantics is true, gestures are deliberately excluded from
+    // the semantics tree; skip this rule.
+    if (widget.properties['excludeFromSemantics'] == true) {
+      return issues;
+    }
+
     if (widget.type == 'GestureDetector' && !isWrappedWithSemantics(widget)) {
       final severity = platform == PlatformType.web ? 'critical' : 'high';
       issues.add(AccessibilityIssue(
