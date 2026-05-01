@@ -1,7 +1,7 @@
-/// Represents a single usage record for an analysis session
-/// Maximum number of files that can be analyzed per day
+// Maximum number of files that can be analyzed per day
 // const int dailyFileLimit = 100; // Unlimited for now
 
+/// Represents a single usage record for an analysis session
 class UsageRecord {
   final DateTime timestamp;
   final int linesScanned;

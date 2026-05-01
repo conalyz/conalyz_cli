@@ -157,4 +157,4 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-For issues and feature requests, please visit our [issue tracker](https://github.com/yourusername/conalyz/issues).
+For issues and feature requests, please visit our [issue tracker](https://github.com/conalyz/conalyz_cli/issues).

@@ -43,9 +43,9 @@ class StoragePermissionException extends StorageException {
 /// Service for managing local storage of usage statistics
 class UsageStorageService {
   static const String _storageFileName = 'usage.json';
-  static const String _appDirectoryName = '.flutter_access_advisor';
+  static const String _appDirectoryName = '.conalyz';
   static const String _fallbackDirectoryName =
-      '.flutter_access_advisor_usage.json';
+      '.conalyz_usage.json';
   static const int _maxRetryAttempts = 3;
   static const int _retryDelayMs = 100;
 
@@ -225,7 +225,7 @@ class UsageStorageService {
 
     // If all fallback locations fail, use emergency temp location
     final emergencyPath = path.join(Directory.systemTemp.path,
-        'flutter_access_advisor_usage_emergency.json');
+        'conalyz_usage_emergency.json');
     _cachedStorageFilePath = emergencyPath;
     _logWarning('Using fallback storage location');
     return emergencyPath;
@@ -235,26 +235,26 @@ class UsageStorageService {
   Future<List<String>> _getFallbackStorageLocations() async {
     final locations = <String>[];
 
-    // Primary location: ~/.flutter_access_advisor/usage.json
+    // Primary location: ~/.conalyz/usage.json
     final homeDir = _getHomeDirectory();
     if (homeDir != null) {
       locations.add(path.join(homeDir, _appDirectoryName, _storageFileName));
     }
 
-    // Secondary location: current directory/.flutter_access_advisor_usage.json
+    // Secondary location: current directory/.conalyz_usage.json
     final currentDir = Directory.current.path;
     locations.add(path.join(currentDir, _fallbackDirectoryName));
 
     // Tertiary location: user's documents directory (if available)
     if (homeDir != null) {
       final documentsPath =
-          path.join(homeDir, 'Documents', 'flutter_access_advisor_usage.json');
+          path.join(homeDir, 'Documents', 'conalyz_usage.json');
       locations.add(documentsPath);
     }
 
     // Quaternary location: system temp directory
     final tempDir = Directory.systemTemp.path;
-    locations.add(path.join(tempDir, 'flutter_access_advisor_usage.json'));
+    locations.add(path.join(tempDir, 'conalyz_usage.json'));
 
     return locations;
   }

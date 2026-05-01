@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:conalyz/src/web_rules.dart';
-import 'package:conalyz/src/optimized_ast_analyzer.dart' show WidgetInfo, OptimizedWidgetExtractionVisitor;
+import 'package:conalyz/src/optimized_ast_analyzer.dart'
+    show WidgetInfo, OptimizedWidgetExtractionVisitor;
 import 'package:conalyz/src/platform_type.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
@@ -19,13 +20,13 @@ void main() {
           child: Text('Content'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
-      
+
       // Should not flag on mobile
       final mobileIssues = rule.check(widget, 'test.dart', PlatformType.mobile);
       expect(mobileIssues, isEmpty);
-      
+
       // Should flag on web
       final webIssues = rule.check(widget, 'test.dart', PlatformType.web);
       expect(webIssues, hasLength(1));
@@ -37,10 +38,10 @@ void main() {
           child: Text('Main content'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Web Semantics'));
@@ -55,10 +56,11 @@ void main() {
           child: Text('Main content'),
         )
       ''';
-      
-      final widget = _createWidgetInfo('Semantics', code, 1, 1, {'tagName': 'main'});
+
+      final widget =
+          _createWidgetInfo('Semantics', code, 1, 1, {'tagName': 'main'});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -73,10 +75,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -95,13 +97,13 @@ void main() {
           child: Text('Click me'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
-      
+
       // Should not flag on mobile
       final mobileIssues = rule.check(widget, 'test.dart', PlatformType.mobile);
       expect(mobileIssues, isEmpty);
-      
+
       // Should flag on web
       final webIssues = rule.check(widget, 'test.dart', PlatformType.web);
       expect(webIssues, hasLength(1));
@@ -115,10 +117,10 @@ void main() {
           child: Icon(Icons.star),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Web ARIA'));
@@ -135,10 +137,11 @@ void main() {
           child: Icon(Icons.star),
         )
       ''';
-      
-      final widget = _createWidgetInfo('Semantics', code, 1, 1, {'button': true, 'label': 'Add to favorites', 'onTap': true});
+
+      final widget = _createWidgetInfo('Semantics', code, 1, 1,
+          {'button': true, 'label': 'Add to favorites', 'onTap': true});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -151,10 +154,11 @@ void main() {
           child: Icon(Icons.star),
         )
       ''';
-      
-      final widget = _createWidgetInfo('Semantics', code, 1, 1, {'button': true, 'hint': 'Tap to add to favorites', 'onTap': true});
+
+      final widget = _createWidgetInfo('Semantics', code, 1, 1,
+          {'button': true, 'hint': 'Tap to add to favorites', 'onTap': true});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -164,10 +168,10 @@ void main() {
           child: Text('Static content'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -178,10 +182,10 @@ void main() {
           child: Text('Visit our website'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.type, equals('Web ARIA'));
     });
@@ -202,13 +206,13 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('MaterialApp', code, 1, 1);
-      
+
       // Should not flag on mobile
       final mobileIssues = rule.check(widget, 'test.dart', PlatformType.mobile);
       expect(mobileIssues, isEmpty);
-      
+
       // Should flag on web
       final webIssues = rule.check(widget, 'test.dart', PlatformType.web);
       expect(webIssues, hasLength(1));
@@ -223,10 +227,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('MaterialApp', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Web Title'));
@@ -242,10 +246,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('CupertinoApp', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Web Title'));
@@ -260,10 +264,11 @@ void main() {
           ),
         )
       ''';
-      
-      final widget = _createWidgetInfo('MaterialApp', code, 1, 1, {'title': 'My Flutter App'});
+
+      final widget = _createWidgetInfo(
+          'MaterialApp', code, 1, 1, {'title': 'My Flutter App'});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -276,10 +281,11 @@ void main() {
           ),
         )
       ''';
-      
-      final widget = _createWidgetInfo('CupertinoApp', code, 1, 1, {'title': 'My iOS-style App'});
+
+      final widget = _createWidgetInfo(
+          'CupertinoApp', code, 1, 1, {'title': 'My iOS-style App'});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -297,13 +303,13 @@ void main() {
           child: TextField(),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Focus', code, 1, 1);
-      
+
       // Should not flag on mobile
       final mobileIssues = rule.check(widget, 'test.dart', PlatformType.mobile);
       expect(mobileIssues, isEmpty);
-      
+
       // Should flag on web
       final webIssues = rule.check(widget, 'test.dart', PlatformType.web);
       expect(webIssues, hasLength(1));
@@ -317,10 +323,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Focus', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Web Focus'));
@@ -339,10 +345,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('FocusScope', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.type, equals('Web Focus'));
     });
@@ -356,10 +362,11 @@ void main() {
           ),
         )
       ''';
-      
-      final widget = _createWidgetInfo('Focus', code, 1, 1, {'focusNode': 'myFocusNode'});
+
+      final widget =
+          _createWidgetInfo('Focus', code, 1, 1, {'focusNode': 'myFocusNode'});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -370,27 +377,31 @@ void main() {
           child: TextField(),
         )
       ''';
-      
-      final widget = _createWidgetInfo('Focus', code, 1, 1, {'autofocus': true});
+
+      final widget =
+          _createWidgetInfo('Focus', code, 1, 1, {'autofocus': true});
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, isEmpty);
     });
   });
 }
 
 // Helper function to create WidgetInfo for testing
-WidgetInfo _createWidgetInfo(String type, String sourceCode, int line, int column, [Map<String, dynamic>? properties]) {
+WidgetInfo _createWidgetInfo(
+    String type, String sourceCode, int line, int column,
+    [Map<String, dynamic>? properties]) {
   // Parse the source code to create a proper AST
   final parseResult = parseString(
     content: sourceCode,
     featureSet: FeatureSet.latestLanguageVersion(),
     throwIfDiagnostics: false,
   );
-  
+
   // Create a mock visitor
-  final visitor = OptimizedWidgetExtractionVisitor(sourceCode, parseResult.unit, false);
-  
+  final visitor =
+      OptimizedWidgetExtractionVisitor(sourceCode, parseResult.unit, false);
+
   return WidgetInfo(
     type: type,
     line: line,

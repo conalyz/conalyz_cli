@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:conalyz/src/flutter_specific_rules.dart';
-import 'package:conalyz/src/optimized_ast_analyzer.dart' show WidgetInfo, OptimizedWidgetExtractionVisitor;
+import 'package:conalyz/src/optimized_ast_analyzer.dart'
+    show WidgetInfo, OptimizedWidgetExtractionVisitor;
 import 'package:conalyz/src/platform_type.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
@@ -13,16 +14,17 @@ void main() {
       rule = MergeSemanticsRule();
     });
 
-    test('should identify MergeSemantics without multiple semantic children', () {
+    test('should identify MergeSemantics without multiple semantic children',
+        () {
       const code = '''
         MergeSemantics(
           child: Text('Single child'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('MergeSemantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Unnecessary MergeSemantics'));
@@ -39,10 +41,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('MergeSemantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -61,10 +63,10 @@ void main() {
           child: Icon(Icons.star),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('GestureDetector', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Small Tap Target'));
@@ -77,10 +79,10 @@ void main() {
           icon: Icon(Icons.star),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('IconButton', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -95,10 +97,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('GestureDetector', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -118,10 +120,10 @@ void main() {
           height: 100,
         )
       ''';
-      
+
       final widget = _createWidgetInfo('AnimatedContainer', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Animation Without Motion Control'));
@@ -137,10 +139,10 @@ void main() {
           height: 100,
         )
       ''';
-      
+
       final widget = _createWidgetInfo('AnimatedContainer', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -166,10 +168,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Form', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Error Not Announced'));
@@ -189,10 +191,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Form', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -211,10 +213,10 @@ void main() {
           child: Text('Heading'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Heading Structure'));
@@ -228,10 +230,10 @@ void main() {
           child: Text('Heading'),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Semantics', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -251,16 +253,17 @@ void main() {
           ],
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Table', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Table Structure'));
     });
 
-    test('should not flag Table with proper TableRow and TableCell structure', () {
+    test('should not flag Table with proper TableRow and TableCell structure',
+        () {
       const code = '''
         Table(
           children: [
@@ -273,10 +276,10 @@ void main() {
           ],
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Table', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
@@ -300,10 +303,10 @@ void main() {
           ],
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Column', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('high'));
       expect(issues.first.type, equals('Live Region'));
@@ -324,10 +327,10 @@ void main() {
           style: TextStyle(fontSize: 16),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Text Scaling Issue'));
@@ -340,10 +343,10 @@ void main() {
           style: TextStyle(fontSize: 8),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(2)); // Both hardcoded size and small text issues
       expect(issues.any((issue) => issue.type == 'Small Text Size'), isTrue);
       expect(issues.any((issue) => issue.severity == 'high'), isTrue);
@@ -356,10 +359,10 @@ void main() {
           style: Theme.of(context).textTheme.bodyLarge,
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -370,10 +373,10 @@ void main() {
           style: TextStyle(fontSize: 16),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Text', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.web);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('low'));
       expect(issues.first.type, equals('Text Scaling'));
@@ -395,10 +398,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Scaffold', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, hasLength(1));
       expect(issues.first.severity, equals('medium'));
       expect(issues.first.type, equals('Scaffold Navigation'));
@@ -413,10 +416,10 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Scaffold', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
 
@@ -432,27 +435,30 @@ void main() {
           ),
         )
       ''';
-      
+
       final widget = _createWidgetInfo('Scaffold', code, 1, 1);
       final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
-      
+
       expect(issues, isEmpty);
     });
   });
 }
 
 // Helper function to create WidgetInfo for testing
-WidgetInfo _createWidgetInfo(String type, String sourceCode, int line, int column, [Map<String, dynamic>? properties]) {
+WidgetInfo _createWidgetInfo(
+    String type, String sourceCode, int line, int column,
+    [Map<String, dynamic>? properties]) {
   // Parse the source code to create a proper AST
   final parseResult = parseString(
     content: sourceCode,
     featureSet: FeatureSet.latestLanguageVersion(),
     throwIfDiagnostics: false,
   );
-  
+
   // Create a mock visitor
-  final visitor = OptimizedWidgetExtractionVisitor(sourceCode, parseResult.unit, false);
-  
+  final visitor =
+      OptimizedWidgetExtractionVisitor(sourceCode, parseResult.unit, false);
+
   return WidgetInfo(
     type: type,
     line: line,
