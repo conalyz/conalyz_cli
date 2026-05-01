@@ -1,4 +1,6 @@
-## Unreleased
+## 0.1.3
+
+* Fixed Issue #11: Bug: GestureDetector accessibility rule incorrectly flags widgets with excludeFromSemantics: true
 * Fixed Issue #6: Added support for MergeSemantics as a valid accessibility container for Switch, Checkbox, and other interactive widgets.
 Enhanced Accessibility Rule Logic: Improved the semantic wrapping check to handle grouped semantic nodes using the MergeSemantics pattern (a standard practice for combining controls like Switch with labels in a ListTile).
 Expanded Test Coverage: Added permanent test cases to test/optimized_ast_analyzer_test.dart and improved the test helper for more accurate widget extraction and AST node mapping.
