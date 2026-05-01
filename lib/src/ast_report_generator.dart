@@ -3,20 +3,26 @@ import 'dart:io';
 import 'optimized_ast_analyzer.dart';
 
 class AstReportGenerator {
-  Future<void> generateJsonReport(AnalysisResult result, String outputPath) async {
-    final jsonContent = const JsonEncoder.withIndent('  ').convert(result.toJson());
+  Future<void> generateJsonReport(
+      AnalysisResult result, String outputPath) async {
+    final jsonContent =
+        const JsonEncoder.withIndent('  ').convert(result.toJson());
     await File(outputPath).writeAsString(jsonContent);
   }
 
-  Future<void> generateHtmlReport(AnalysisResult result, String outputPath) async {
+  Future<void> generateHtmlReport(
+      AnalysisResult result, String outputPath) async {
     final htmlContent = _generateHtmlContent(result);
     await File(outputPath).writeAsString(htmlContent);
   }
 
   String _generateHtmlContent(AnalysisResult result) {
-    final criticalIssues = result.issues.where((i) => i.severity == 'critical').toList();
-    final highIssues = result.issues.where((i) => i.severity == 'high').toList();
-    final mediumIssues = result.issues.where((i) => i.severity == 'medium').toList();
+    final criticalIssues =
+        result.issues.where((i) => i.severity == 'critical').toList();
+    final highIssues =
+        result.issues.where((i) => i.severity == 'high').toList();
+    final mediumIssues =
+        result.issues.where((i) => i.severity == 'medium').toList();
     final lowIssues = result.issues.where((i) => i.severity == 'low').toList();
 
     return '''
@@ -989,20 +995,16 @@ class AstReportGenerator {
 
   String _generateTypeFilters(List<AccessibilityIssue> allIssues) {
     final typeCounts = <String, int>{};
-    
+
     // Count occurrences of each issue type
     for (final issue in allIssues) {
-      typeCounts.update(
-        issue.type, 
-        (count) => count + 1, 
-        ifAbsent: () => 1
-      );
+      typeCounts.update(issue.type, (count) => count + 1, ifAbsent: () => 1);
     }
-    
+
     // Sort types by count (descending)
     final sortedTypes = typeCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     // Generate dropdown items
     return sortedTypes.map((entry) {
       final type = entry.key;
@@ -1016,7 +1018,7 @@ class AstReportGenerator {
         </div>''';
     }).join('\n');
   }
-  
+
   String _escapeHtml(String text) {
     return text
         .replaceAll('&', '&amp;')
@@ -1025,12 +1027,13 @@ class AstReportGenerator {
         .replaceAll('"', '&quot;')
         .replaceAll('\'', '&#39;');
   }
-  
+
   String _toCssId(String text) {
     return text.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
   }
 
-  String _generateSeveritySection(String title, List<AccessibilityIssue> issues, String severity) {
+  String _generateSeveritySection(
+      String title, List<AccessibilityIssue> issues, String severity) {
     if (issues.isEmpty) {
       return '''
         <div class="severity-section">

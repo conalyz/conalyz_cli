@@ -6,7 +6,7 @@ void main() {
     test('should create UsageRecord with all required fields', () {
       final timestamp = DateTime.now();
       final analysisDate = DateTime.now();
-      
+
       final record = UsageRecord(
         timestamp: timestamp,
         linesScanned: 1000,
@@ -29,7 +29,7 @@ void main() {
     test('should serialize to JSON correctly', () {
       final timestamp = DateTime.parse('2024-01-15T10:30:00.000Z');
       final analysisDate = DateTime.parse('2024-01-15T10:30:00.000Z');
-      
+
       final record = UsageRecord(
         timestamp: timestamp,
         linesScanned: 1000,
@@ -64,13 +64,15 @@ void main() {
 
       final record = UsageRecord.fromJson(json);
 
-      expect(record.timestamp, equals(DateTime.parse('2024-01-15T10:30:00.000Z')));
+      expect(
+          record.timestamp, equals(DateTime.parse('2024-01-15T10:30:00.000Z')));
       expect(record.linesScanned, equals(1000));
       expect(record.projectPath, equals('/test/project'));
       expect(record.platform, equals('mobile'));
       expect(record.analysisTimeMs, equals(2500));
       expect(record.filesAnalyzed, equals(10));
-      expect(record.analysisDate, equals(DateTime.parse('2024-01-15T10:30:00.000Z')));
+      expect(record.analysisDate,
+          equals(DateTime.parse('2024-01-15T10:30:00.000Z')));
     });
   });
 
@@ -106,7 +108,7 @@ void main() {
     test('should serialize to JSON correctly', () {
       final created = DateTime.parse('2024-01-15T10:00:00.000Z');
       final lastUpdated = DateTime.parse('2024-01-15T10:30:00.000Z');
-      
+
       final record = UsageRecord(
         timestamp: DateTime.parse('2024-01-15T10:30:00.000Z'),
         linesScanned: 100,
@@ -129,7 +131,8 @@ void main() {
       expect(json['version'], equals('1.0'));
       expect(json['records'], hasLength(1));
       expect(json['metadata']['created'], equals('2024-01-15T10:00:00.000Z'));
-      expect(json['metadata']['lastUpdated'], equals('2024-01-15T10:30:00.000Z'));
+      expect(
+          json['metadata']['lastUpdated'], equals('2024-01-15T10:30:00.000Z'));
     });
 
     test('should deserialize from JSON correctly', () {
@@ -157,7 +160,8 @@ void main() {
       expect(data.version, equals('1.0'));
       expect(data.records, hasLength(1));
       expect(data.created, equals(DateTime.parse('2024-01-15T10:00:00.000Z')));
-      expect(data.lastUpdated, equals(DateTime.parse('2024-01-15T10:30:00.000Z')));
+      expect(
+          data.lastUpdated, equals(DateTime.parse('2024-01-15T10:30:00.000Z')));
     });
   });
 
@@ -202,13 +206,14 @@ void main() {
       expect(statistics.recentSessions, hasLength(1));
       expect(statistics.usageByPlatform['mobile'], equals(1000));
       expect(statistics.largestSession, equals(record));
-      expect(statistics.mostProductiveDay, equals(DateTime(timestamp.year, timestamp.month, timestamp.day)));
+      expect(statistics.mostProductiveDay,
+          equals(DateTime(timestamp.year, timestamp.month, timestamp.day)));
     });
 
     test('should create statistics from multiple records', () {
       final timestamp1 = DateTime.parse('2024-01-15T10:30:00.000Z');
       final timestamp2 = DateTime.parse('2024-01-16T14:45:00.000Z');
-      
+
       final record1 = UsageRecord(
         timestamp: timestamp1,
         linesScanned: 1000,
@@ -246,7 +251,7 @@ void main() {
 
     test('should limit recent sessions', () {
       final records = <UsageRecord>[];
-      
+
       // Create 15 records
       for (int i = 0; i < 15; i++) {
         records.add(UsageRecord(
@@ -263,13 +268,14 @@ void main() {
       final statistics = UsageStatistics.fromRecords(records);
 
       expect(statistics.totalSessions, equals(15));
-      expect(statistics.recentSessions.length, lessThanOrEqualTo(10)); // Should be limited
+      expect(statistics.recentSessions.length,
+          lessThanOrEqualTo(10)); // Should be limited
     });
 
     test('should calculate most productive day correctly', () {
       final day1 = DateTime.parse('2024-01-15T10:00:00.000Z');
       final day2 = DateTime.parse('2024-01-16T10:00:00.000Z');
-      
+
       final records = [
         // Day 1: 2 sessions, 1500 lines total
         UsageRecord(
@@ -304,7 +310,10 @@ void main() {
 
       final statistics = UsageStatistics.fromRecords(records);
 
-      expect(statistics.mostProductiveDay, equals(DateTime(day1.year, day1.month, day1.day))); // Day 1 had more lines
+      expect(
+          statistics.mostProductiveDay,
+          equals(DateTime(
+              day1.year, day1.month, day1.day))); // Day 1 had more lines
     });
   });
 

@@ -1,6 +1,6 @@
-# Flutter Access Advisor CLI - Test Suite
+# Conalyz CLI - Test Suite
 
-This directory contains comprehensive test cases for the Flutter Access Advisor CLI tool, which analyzes Flutter applications for accessibility issues.
+This directory contains comprehensive test cases for the Conalyz CLI tool, which analyzes Flutter applications for accessibility issues.
 
 ## Test Structure
 
@@ -63,7 +63,7 @@ End-to-end integration tests including:
 
 ### Run All Tests
 ```bash
-cd flutter_access_advisor_cli
+cd conalyz_cli
 flutter test
 ```
 

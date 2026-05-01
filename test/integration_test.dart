@@ -10,7 +10,8 @@ void main() {
 
     setUp(() async {
       tempDir = await Directory.systemTemp.createTemp('integration_test_');
-      analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: false);
+      analyzer =
+          OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: false);
     });
 
     tearDown(() async {
@@ -20,7 +21,8 @@ void main() {
     });
 
     group('Single File Analysis', () {
-      test('should analyze simple Flutter file with accessibility issues', () async {
+      test('should analyze simple Flutter file with accessibility issues',
+          () async {
         const dartCode = '''
 import 'package:flutter/material.dart';
 
@@ -80,7 +82,8 @@ class MyWidget extends StatelessWidget {
         expect(result.issuesBySeverity['medium'], greaterThan(0));
       });
 
-      test('should analyze Flutter file with good accessibility practices', () async {
+      test('should analyze Flutter file with good accessibility practices',
+          () async {
         const dartCode = '''
 import 'package:flutter/material.dart';
 
@@ -131,12 +134,22 @@ class AccessibleWidget extends StatelessWidget {
 
         // Should have fewer or no critical issues
         expect(result.issuesBySeverity['critical'] ?? 0, lessThan(3));
-        
+
         // Check that good practices are not flagged
-        final issueMessages = result.issues.map((issue) => issue.message).toList();
-        expect(issueMessages.any((msg) => msg.contains('Image without alternative text')), isFalse);
-        expect(issueMessages.any((msg) => msg.contains('TextField without hint, label')), isFalse);
-        expect(issueMessages.any((msg) => msg.contains('IconButton without tooltip')), isFalse);
+        final issueMessages =
+            result.issues.map((issue) => issue.message).toList();
+        expect(
+            issueMessages
+                .any((msg) => msg.contains('Image without alternative text')),
+            isFalse);
+        expect(
+            issueMessages
+                .any((msg) => msg.contains('TextField without hint, label')),
+            isFalse);
+        expect(
+            issueMessages
+                .any((msg) => msg.contains('IconButton without tooltip')),
+            isFalse);
       });
 
       test('should handle web platform differences', () async {
@@ -179,17 +192,19 @@ class WebWidget extends StatelessWidget {
         );
 
         // Web should have additional issues
-        expect(webResult.totalIssues, greaterThanOrEqualTo(mobileResult.totalIssues));
+        expect(webResult.totalIssues,
+            greaterThanOrEqualTo(mobileResult.totalIssues));
 
         // Check for web-specific issues
-        final webIssueTypes = webResult.issues.map((issue) => issue.type).toSet();
+        final webIssueTypes =
+            webResult.issues.map((issue) => issue.type).toSet();
         expect(webIssueTypes, contains('Missing Page Title'));
         expect(webIssueTypes, contains('Missing Semantic HTML'));
 
         // GestureDetector should be more severe on web
-        final gestureIssues = webResult.issues.where(
-          (issue) => issue.type == 'GestureDetector Without Semantics'
-        ).toList();
+        final gestureIssues = webResult.issues
+            .where((issue) => issue.type == 'GestureDetector Without Semantics')
+            .toList();
         if (gestureIssues.isNotEmpty) {
           expect(gestureIssues.first.severity, equals('critical'));
         }
@@ -333,7 +348,8 @@ class TestWidget extends StatelessWidget {
 
         expect(result.analyzedFiles, contains(largeFile.path));
         expect(result.linesScanned, greaterThan(100));
-        expect(stopwatch.elapsedMilliseconds, lessThan(10000)); // Should complete within 10 seconds
+        expect(stopwatch.elapsedMilliseconds,
+            lessThan(10000)); // Should complete within 10 seconds
       });
 
       test('should handle multiple files efficiently', () async {
@@ -368,7 +384,8 @@ class Widget$i extends StatelessWidget {
 
         expect(result.analyzedFiles, hasLength(20));
         expect(result.totalIssues, greaterThan(0));
-        expect(stopwatch.elapsedMilliseconds, lessThan(30000)); // Should complete within 30 seconds
+        expect(stopwatch.elapsedMilliseconds,
+            lessThan(30000)); // Should complete within 30 seconds
       });
     });
 
@@ -403,8 +420,9 @@ class InvalidWidget extends StatelessWidget {
         final nonExistentPath = '${tempDir.path}/non_existent.dart';
 
         // The analyzer should handle non-existent files gracefully
-        final result = await analyzer.analyzeFile(nonExistentPath, platform: PlatformType.mobile);
-        
+        final result = await analyzer.analyzeFile(nonExistentPath,
+            platform: PlatformType.mobile);
+
         // The analyzer may still include the file path in analyzedFiles even if it doesn't exist
         // but should have no issues and no lines scanned
         expect(result.totalIssues, equals(0));

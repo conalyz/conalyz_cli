@@ -9,7 +9,7 @@ import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
 
 // Version constant
-const String version = '1.0.0';
+const String version = '0.1.3';
 
 void main(List<String> arguments) async {
   // Check if this is a usage command
@@ -58,11 +58,11 @@ Future<void> _handleUsageCommand(List<String> arguments) async {
 Future<void> _handleAnalysisCommand(List<String> arguments) async {
   final parser = ArgParser()
     ..addFlag('version',
-        abbr: 'v',
-        help: 'Show version information',
-        negatable: false)
+        abbr: 'v', help: 'Show version information', negatable: false)
     ..addOption('path',
-        abbr: 'p', help: 'Path to Flutter project directory or dart file', mandatory: false)
+        abbr: 'p',
+        help: 'Path to Flutter project directory or dart file',
+        mandatory: false)
     ..addOption('platform',
         abbr: 't',
         help: 'Target platform (mobile/web)',
@@ -74,7 +74,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         defaultsTo: 'accessibility_report')
     ..addFlag('json', help: 'Generate JSON report', defaultsTo: true)
     ..addFlag('html', help: 'Generate HTML report', defaultsTo: true)
-    ..addFlag('debug', help: 'Enable debug output for troubleshooting', defaultsTo: false)
+    ..addFlag('debug',
+        help: 'Enable debug output for troubleshooting', defaultsTo: false)
     ..addFlag('help',
         abbr: 'h', help: 'Show this help message', negatable: false);
 
@@ -106,8 +107,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     // Check daily file limit before proceeding
     final usageService = UsageStorageService();
     // Estimate files to analyze (1 for single file, will be more for directories)
-    final filesToAnalyze = FileSystemEntity.isFileSync(projectPath) ? 1 : 100; 
-    
+    final filesToAnalyze = FileSystemEntity.isFileSync(projectPath) ? 1 : 100;
+
     final limitCheck = await usageService.checkDailyLimit(filesToAnalyze);
     if (limitCheck != null) {
       print('❌ $limitCheck');
@@ -135,7 +136,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     }
 
     if (isFile) {
-      print('🔍 Analyzing Dart file for accessibility issues: ${projectPath.split('/').last}');
+      print(
+          '🔍 Analyzing Dart file for accessibility issues: ${projectPath.split('/').last}');
     } else {
       print('🔍 Analyzing Flutter project for accessibility issues...');
     }
@@ -146,7 +148,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     }
 
     // Create optimized analyzer with built-in rules (includes all latest rules and widget recognition)
-    final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(enableDebugOutput: enableDebug);
+    final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(
+        enableDebugOutput: enableDebug);
 
     final startTime = DateTime.now();
 
@@ -154,11 +157,13 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     final analysisResult = isFile
         ? await analyzer.analyzeFile(
             projectPath,
-            platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
+            platform:
+                platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
           )
         : await analyzer.analyzeProject(
             projectPath,
-            platform: platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
+            platform:
+                platform == 'mobile' ? PlatformType.mobile : PlatformType.web,
           );
 
     final endTime = DateTime.now();
@@ -200,12 +205,15 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     print('');
     print('✅ Analysis complete!');
     print('⏱️  Time: ${(duration.inMilliseconds / 1000).toStringAsFixed(1)}s');
-    print('📊 Files: ${analysisResult.analyzedFiles.length} | Lines: ${analysisResult.linesScanned}');
-    print('🐛 Issues: ${analysisResult.totalIssues} (🔴${analysisResult.issuesBySeverity['critical']} 🟠${analysisResult.issuesBySeverity['high']} 🟡${analysisResult.issuesBySeverity['medium']} 🟢${analysisResult.issuesBySeverity['low']})');
-    
+    print(
+        '📊 Files: ${analysisResult.analyzedFiles.length} | Lines: ${analysisResult.linesScanned}');
+    print(
+        '🐛 Issues: ${analysisResult.totalIssues} (🔴${analysisResult.issuesBySeverity['critical']} 🟠${analysisResult.issuesBySeverity['high']} 🟡${analysisResult.issuesBySeverity['medium']} 🟢${analysisResult.issuesBySeverity['low']})');
+
     if (enableDebug) {
       print('');
-      print('💡 Tip: Run "conalyz usage" to view your analysis statistics and track your progress over time.');
+      print(
+          '💡 Tip: Run "conalyz usage" to view your analysis statistics and track your progress over time.');
     }
 
     // Exit with error code if critical issues found
@@ -237,8 +245,7 @@ void _showUsageHelp(ArgParser parser) {
   print(parser.usage);
   print('');
   print('Examples:');
-  print(
-      '  conalyz usage                    # Show basic usage statistics');
+  print('  conalyz usage                    # Show basic usage statistics');
   print(
       '  conalyz usage --detailed         # Show detailed usage with recent sessions');
   print('');
@@ -280,14 +287,10 @@ void _showAnalysisHelp(ArgParser parser) {
   print('Examples:');
   print(
       '  conalyz --path ./my_app         # Analyze Flutter project for mobile');
-  print(
-      '  conalyz --path ./my_app --platform web  # Analyze for web platform');
-  print(
-      '  conalyz --output ./reports      # Custom output directory');
-  print(
-      '  conalyz usage                   # View your usage statistics');
-  print(
-      '  conalyz usage --detailed        # View detailed usage analytics');
+  print('  conalyz --path ./my_app --platform web  # Analyze for web platform');
+  print('  conalyz --output ./reports      # Custom output directory');
+  print('  conalyz usage                   # View your usage statistics');
+  print('  conalyz usage --detailed        # View detailed usage analytics');
   print('');
   print('Features:');
   print('  • Comprehensive Flutter widget accessibility analysis');
