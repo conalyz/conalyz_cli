@@ -27,6 +27,12 @@ dart pub global activate conalyz
 export PATH="$PATH":"$HOME/.pub-cache/bin"
 ```
 
+If the tool is already installed, you can ensure it is on the latest version by running:
+
+```bash
+conalyz update
+```
+
 ---
 
 ## Step 2: Determine the target path

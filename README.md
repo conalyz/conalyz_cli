@@ -82,6 +82,9 @@ conalyz usage
 
 # View detailed usage analytics
 conalyz usage --detailed
+
+# Update conalyz to the latest version
+conalyz update
 ```
 
 ### Command Line Options

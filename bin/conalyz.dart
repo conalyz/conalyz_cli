@@ -1,12 +1,14 @@
 import 'dart:io';
+
 import 'package:args/args.dart';
-import 'package:path/path.dart' as path;
+import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
 import 'package:conalyz/src/platform_type.dart';
-import 'package:conalyz/src/ast_report_generator.dart';
-import 'package:conalyz/src/usage_storage_service.dart';
-import 'package:conalyz/src/usage_models.dart';
+import 'package:conalyz/src/update_command.dart' show UpdateCommand;
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
+import 'package:conalyz/src/usage_models.dart';
+import 'package:conalyz/src/usage_storage_service.dart';
+import 'package:path/path.dart' as path;
 
 // Version constant
 const String version = '0.1.3';
@@ -15,6 +17,12 @@ void main(List<String> arguments) async {
   // Check if this is a usage command
   if (arguments.isNotEmpty && arguments[0] == 'usage') {
     await _handleUsageCommand(arguments.skip(1).toList());
+    return;
+  }
+
+  // Check if this is an update command
+  if (arguments.isNotEmpty && arguments[0] == 'update') {
+    await _handleUpdateCommand(arguments.skip(1).toList());
     return;
   }
 
@@ -52,6 +60,42 @@ Future<void> _handleUsageCommand(List<String> arguments) async {
     _showUsageHelp(parser);
     exit(1);
   }
+}
+
+/// Handles the update command and its flags
+Future<void> _handleUpdateCommand(List<String> arguments) async {
+  final parser = ArgParser()
+    ..addFlag('help',
+        abbr: 'h', help: 'Show update command help', negatable: false);
+
+  try {
+    final results = parser.parse(arguments);
+
+    if (results['help']) {
+      _showUpdateHelp(parser);
+      return;
+    }
+
+    final updateCommand = UpdateCommand();
+    await updateCommand.update();
+  } catch (e) {
+    print('❌ Error: $e');
+    print('');
+    _showUpdateHelp(parser);
+    exit(1);
+  }
+}
+
+/// Shows help for the update command
+void _showUpdateHelp(ArgParser parser) {
+  print('🔄 Conalyz CLI - Update');
+  print('');
+  print('Usage: conalyz update');
+  print('');
+  print('Updates the conalyz CLI to the latest version available on pub.dev.');
+  print('');
+  print('Options:');
+  print(parser.usage);
 }
 
 /// Handles the analysis command (original functionality)
@@ -283,6 +327,8 @@ void _showAnalysisHelp(ArgParser parser) {
       '  usage                                              # Show usage statistics and analytics');
   print(
       '  usage --detailed                                   # Show detailed usage with session history');
+  print(
+      '  update                                             # Update Conalyz to the latest version');
   print('');
   print('Examples:');
   print(
@@ -291,6 +337,7 @@ void _showAnalysisHelp(ArgParser parser) {
   print('  conalyz --output ./reports      # Custom output directory');
   print('  conalyz usage                   # View your usage statistics');
   print('  conalyz usage --detailed        # View detailed usage analytics');
+  print('  conalyz update                  # Update to the latest version');
   print('');
   print('Features:');
   print('  • Comprehensive Flutter widget accessibility analysis');

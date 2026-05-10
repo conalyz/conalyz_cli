@@ -59,6 +59,11 @@ End-to-end integration tests including:
 - Performance testing with large files
 - Error handling for invalid files
 
+### 7. **update_command_test.dart**
+Tests for the update command including:
+- CLI flag parsing (`--help`, `-h`)
+- Successful execution of the update process
+
 ## Running Tests
 
 ### Run All Tests
