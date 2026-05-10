@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:path/path.dart' as path;
+
 import 'usage_models.dart';
 
 extension DateOnlyCompare on DateTime {
@@ -44,8 +46,7 @@ class StoragePermissionException extends StorageException {
 class UsageStorageService {
   static const String _storageFileName = 'usage.json';
   static const String _appDirectoryName = '.conalyz';
-  static const String _fallbackDirectoryName =
-      '.conalyz_usage.json';
+  static const String _fallbackDirectoryName = '.conalyz_usage.json';
   static const int _maxRetryAttempts = 3;
   static const int _retryDelayMs = 100;
 
@@ -224,8 +225,8 @@ class UsageStorageService {
     }
 
     // If all fallback locations fail, use emergency temp location
-    final emergencyPath = path.join(Directory.systemTemp.path,
-        'conalyz_usage_emergency.json');
+    final emergencyPath =
+        path.join(Directory.systemTemp.path, 'conalyz_usage_emergency.json');
     _cachedStorageFilePath = emergencyPath;
     _logWarning('Using fallback storage location');
     return emergencyPath;
