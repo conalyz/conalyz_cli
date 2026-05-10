@@ -1,3 +1,10 @@
+## unreleased
+
+* Correct placeholder repository link in generated reports
+* Added support for the latest analyzer package (v13.0.0) and updated AST traversal logic to accommodate API changes.
+* Added a new `update` command to the CLI for easy updating of the conalyz package to the latest version.
+* Updated test suite to include tests for the new `update` command and to ensure compatibility with
+
 ## 0.1.3
 
 * Fixed Issue #11: Bug: GestureDetector accessibility rule incorrectly flags widgets with excludeFromSemantics: true
