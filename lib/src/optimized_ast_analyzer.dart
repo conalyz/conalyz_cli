@@ -653,7 +653,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   }
 
   void _addWidget(
-      String widgetType, AstNode node, NodeList<Expression> arguments) {
+      String widgetType, AstNode node, NodeList<Argument> arguments) {
     final lineInfo = compilationUnit.lineInfo;
     final location = lineInfo.getLocation(node.offset);
 
@@ -661,9 +661,9 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
     // Extract properties from arguments more efficiently
     for (final arg in arguments) {
-      if (arg is NamedExpression) {
-        final name = arg.name.label.name;
-        final value = _extractArgumentValue(arg.expression);
+      if (arg is NamedArgument) {
+        final name = arg.name.lexeme;
+        final value = _extractArgumentValue(arg.argumentExpression);
         properties[name] = value;
         if (_enableDebugOutput) {
           print('    Property: $name = $value');
@@ -1989,8 +1989,8 @@ class MobileTabAccessibilityRule extends AccessibilityRule {
 
     Expression? tabsExpr;
     for (final arg in argumentList.arguments) {
-      if (arg is NamedExpression && arg.name.label.name == 'tabs') {
-        tabsExpr = arg.expression;
+      if (arg is NamedArgument && arg.name.lexeme == 'tabs') {
+        tabsExpr = arg.argumentExpression;
         break;
       }
     }
@@ -2044,8 +2044,8 @@ class _TabReadableVisitor extends RecursiveAstVisitor<void> {
 
   bool _hasReadableText(ArgumentList argumentList) {
     for (final arg in argumentList.arguments) {
-      if (arg is NamedExpression && arg.name.label.name == 'text') {
-        final value = arg.expression;
+      if (arg is NamedArgument && arg.name.lexeme == 'text') {
+        final value = arg.argumentExpression;
         if (value is StringLiteral) {
           if (value.stringValue != null && value.stringValue!.isNotEmpty) {
             return true;
@@ -2068,7 +2068,7 @@ class _TabReadableVisitor extends RecursiveAstVisitor<void> {
               firstArg.stringValue!.isNotEmpty) {
             return true;
           }
-        } else if (firstArg is! NamedExpression) {
+        } else if (firstArg is! NamedArgument) {
           // Positional argument that's not a literal
           return true;
         }
@@ -2077,8 +2077,8 @@ class _TabReadableVisitor extends RecursiveAstVisitor<void> {
 
     // Check for 'text' property
     for (final arg in argumentList.arguments) {
-      if (arg is NamedExpression && arg.name.label.name == 'text') {
-        final value = arg.expression;
+      if (arg is NamedArgument && arg.name.lexeme == 'text') {
+        final value = arg.argumentExpression;
         if (value is StringLiteral) {
           if (value.stringValue != null && value.stringValue!.isNotEmpty) {
             return true;
