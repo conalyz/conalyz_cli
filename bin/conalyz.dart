@@ -4,16 +4,20 @@ import 'package:args/args.dart';
 import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
 import 'package:conalyz/src/platform_type.dart';
+import 'package:conalyz/src/constants.dart';
+import 'package:conalyz/src/telemetry.dart';
 import 'package:conalyz/src/update_command.dart' show UpdateCommand;
 import 'package:conalyz/src/usage_command.dart' show UsageCommand;
 import 'package:conalyz/src/usage_models.dart';
 import 'package:conalyz/src/usage_storage_service.dart';
 import 'package:path/path.dart' as path;
 
-// Version constant
-const String version = '0.1.3';
+// Version constant — source of truth is lib/src/constants.dart
+const String version = conalyzVersion;
 
 void main(List<String> arguments) async {
+  await checkFirstRunNotice();
+
   // Check if this is a usage command
   if (arguments.isNotEmpty && arguments[0] == 'usage') {
     await _handleUsageCommand(arguments.skip(1).toList());
@@ -260,6 +264,40 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
           '💡 Tip: Run "conalyz usage" to view your analysis statistics and track your progress over time.');
     }
 
+    // Compute per-type issue counts for telemetry
+    final issueCounts = <String, int>{};
+    for (final issue in analysisResult.issues) {
+      issueCounts[issue.type] = (issueCounts[issue.type] ?? 0) + 1;
+    }
+
+    // Map internal severity names to telemetry buckets
+    final severityBreakdown = {
+      'error': (analysisResult.issuesBySeverity['critical'] ?? 0) +
+          (analysisResult.issuesBySeverity['high'] ?? 0),
+      'warning': analysisResult.issuesBySeverity['medium'] ?? 0,
+      'info': analysisResult.issuesBySeverity['low'] ?? 0,
+    };
+
+    final outputFormat = (generateJson && generateHtml)
+        ? 'both'
+        : (generateJson ? 'json' : (generateHtml ? 'html' : 'none'));
+
+    Telemetry.trackAnalysis(
+      durationMs: duration.inMilliseconds,
+      filesScanned: analysisResult.analyzedFiles.length,
+      linesScanned: analysisResult.linesScanned,
+      totalIssues: analysisResult.totalIssues,
+      issueCounts: issueCounts,
+      severityBreakdown: severityBreakdown,
+      outputFormat: outputFormat,
+      platformTarget: platform,
+      usedCustomOutputPath: results.wasParsed('output'),
+      usedDebugFlag: enableDebug,
+      specificFileScan: isFile,
+      exitReason: 'success',
+      projectPath: projectPath,
+    );
+
     // Exit with error code if critical issues found
     if ((analysisResult.issuesBySeverity['critical'] ?? 0) > 0) {
       print('');
@@ -267,6 +305,7 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
       exit(1);
     }
   } catch (e) {
+    Telemetry.trackError(e.runtimeType.toString());
     print('❌ Error: $e');
     print('');
     _showAnalysisHelp(parser);

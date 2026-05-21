@@ -1,9 +1,10 @@
-## unreleased
+## 0.2.0
 
 * Correct placeholder repository link in generated reports
 * Added support for the latest analyzer package (v13.0.0) and updated AST traversal logic to accommodate API changes.
 * Added a new `update` command to the CLI for easy updating of the conalyz package to the latest version.
 * Updated test suite to include tests for the new `update` command and to ensure compatibility with
+* Added privacy-first anonymous telemetry (opt-out via `CONALYZ_NO_ANALYTICS=true` or `DO_NOT_TRACK=1`). Collects aggregate issue counts, OS, and command flags only — no code, filenames, or personal data. Skipped automatically in CI environments.
 
 ## 0.1.3
 

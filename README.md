@@ -161,3 +161,26 @@ MIT License - see LICENSE file for details
 ## Support
 
 For issues and feature requests, please visit our [issue tracker](https://github.com/conalyz/conalyz_cli/issues).
+
+## Anonymized Telemetry
+
+To prioritize feature development, conalyz collects lightweight anonymous telemetry.
+
+### What is collected
+- Which accessibility issue types were found (counts only, e.g. `missing_tooltip: 3`)
+- Command flags used (e.g. `--platform`, `--output`)
+- OS platform and tool version
+- Whether run in CI or on a Flutter project
+- Scan duration and file count (as size bucket: small/medium/large)
+
+### What is NOT collected
+- No filenames, file paths, or source code
+- No personal data, emails, hostnames, or IP addresses
+- No data when running in CI (skipped automatically)
+
+### Opt out
+```bash
+export CONALYZ_NO_ANALYTICS=true
+# or
+export DO_NOT_TRACK=1
+```
