@@ -282,7 +282,7 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         ? 'both'
         : (generateJson ? 'json' : (generateHtml ? 'html' : 'none'));
 
-    Telemetry.trackAnalysis(
+    await Telemetry.trackAnalysis(
       durationMs: duration.inMilliseconds,
       filesScanned: analysisResult.analyzedFiles.length,
       linesScanned: analysisResult.linesScanned,

@@ -1,3 +1,7 @@
+## 0.2.2
+
+* Fix telemetry events not being delivered by awaiting the HTTP request before process exit.
+
 ## 0.2.1
 
 * Fix telemetry endpoint URL to point directly to Cloudflare Worker.

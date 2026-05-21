@@ -1,1 +1,1 @@
-const String conalyzVersion = '0.2.1';
+const String conalyzVersion = '0.2.2';

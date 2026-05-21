@@ -113,7 +113,7 @@ bool _hasTests(String dirPath) {
 }
 
 class Telemetry {
-  static void trackAnalysis({
+  static Future<void> trackAnalysis({
     required int durationMs,
     required int filesScanned,
     required int linesScanned,
@@ -128,8 +128,8 @@ class Telemetry {
     required String exitReason,
     String projectPath = '',
   }) {
-    if (_shouldSkip()) return;
-    _doTrackAnalysis(
+    if (_shouldSkip()) return Future.value();
+    return _doTrackAnalysis(
       durationMs: durationMs,
       filesScanned: filesScanned,
       linesScanned: linesScanned,
