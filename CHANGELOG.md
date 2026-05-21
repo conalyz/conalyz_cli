@@ -1,3 +1,7 @@
+## 0.2.1
+
+* Fix telemetry endpoint URL to point directly to Cloudflare Worker.
+
 ## 0.2.0
 
 * Correct placeholder repository link in generated reports

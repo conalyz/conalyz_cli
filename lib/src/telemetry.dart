@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'constants.dart';
 
 const String _version = conalyzVersion;
-const String _telemetryUrl = 'https://conalyz.com/telemetry';
+const String _telemetryUrl = 'https://conalyz.codeanalyer.workers.dev';
 
 String _homeDir() =>
     Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
