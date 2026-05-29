@@ -110,6 +110,16 @@ abstract class AccessibilityRule {
   bool isWrappedWithSemantics(WidgetInfo widget) {
     return widget.visitor.isWrappedWithSemantics(widget.node);
   }
+
+  /// Converts a camelCase icon name (e.g. 'arrowBack') to a readable label (e.g. 'Arrow back')
+  static String iconNameToLabel(String iconName) {
+    final spaced = iconName.replaceAllMapped(
+      RegExp(r'([A-Z])'),
+      (m) => ' ${m.group(1)!.toLowerCase()}',
+    ).trim();
+    if (spaced.isEmpty) return iconName;
+    return '${spaced[0].toUpperCase()}${spaced.substring(1)}';
+  }
 }
 
 /// Optimized AST-based Flutter accessibility analyzer with performance improvements
@@ -858,12 +868,32 @@ class ImageAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Add semanticLabel property or wrap with Semantics widget providing meaningful description',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final code = widget.sourceCode;
+    final assetMatch = RegExp(r"Image\.asset\('([^']+)'").firstMatch(code) ??
+        RegExp(r'Image\.asset\("([^"]+)"').firstMatch(code);
+    final networkMatch =
+        RegExp(r"Image\.network\('([^']+)'").firstMatch(code) ??
+            RegExp(r'Image\.network\("([^"]+)"').firstMatch(code);
+    if (assetMatch != null) {
+      final raw = assetMatch.group(1)!.split('/').last.split('.').first;
+      final label = raw.replaceAll(RegExp(r'[_\-]'), ' ');
+      final capitalized = label.isNotEmpty
+          ? '${label[0].toUpperCase()}${label.substring(1)}'
+          : 'Describe this image';
+      return "Add semanticLabel: '$capitalized' to describe this Image.asset for screen readers";
+    }
+    if (networkMatch != null) {
+      return "Add semanticLabel: 'Describe what this image shows' to this Image.network for screen readers";
+    }
+    return "Add semanticLabel: 'Describe this image' or wrap with Semantics(label: '...') to make this image accessible";
   }
 
   bool _isWrappedWithSemantics(WidgetInfo widget) {
@@ -904,13 +934,32 @@ class FormLabelRule extends AccessibilityRule {
           line: widget.line,
           column: widget.column,
           rule: ruleId,
-          suggestion:
-              'Add decoration with labelText/hintText, external Text label, or wrap with Semantics',
+          suggestion: _buildSuggestion(widget),
         ));
       }
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final code = widget.sourceCode;
+    String labelHint = 'Enter value';
+    if (code.contains('TextInputType.emailAddress')) {
+      labelHint = 'Email address';
+    } else if (code.contains('TextInputType.phone')) {
+      labelHint = 'Phone number';
+    } else if (code.contains('TextInputType.name')) {
+      labelHint = 'Full name';
+    } else if (code.contains('TextInputType.number') ||
+        code.contains('TextInputType.numberWithOptions')) {
+      labelHint = 'Enter a number';
+    } else if (code.contains('TextInputType.multiline')) {
+      labelHint = 'Enter text';
+    } else if (code.contains('TextInputType.url')) {
+      labelHint = 'Enter URL';
+    }
+    return "Add decoration: InputDecoration(labelText: '$labelHint') to identify this ${widget.type} for screen readers";
   }
 
   // Removed - using centralized method from base class
@@ -1083,12 +1132,22 @@ class IconAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Add semanticLabel or wrap with Semantics widget. Use ExcludeSemantics for decorative icons',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final iconMatch =
+        RegExp(r'Icons\.(\w+)').firstMatch(widget.sourceCode);
+    if (iconMatch != null) {
+      final iconName = iconMatch.group(1)!;
+      final label = AccessibilityRule.iconNameToLabel(iconName);
+      return "Add semanticLabel: '$label' to Icon(Icons.$iconName), or wrap with ExcludeSemantics if this icon is purely decorative";
+    }
+    return "Add semanticLabel: 'Describe this icon' or wrap with ExcludeSemantics if decorative";
   }
 
   // Removed - using centralized method from base class
@@ -1283,13 +1342,22 @@ class ButtonLabelRule extends AccessibilityRule {
           line: widget.line,
           column: widget.column,
           rule: ruleId,
-          suggestion:
-              'Add a visible Text child, semanticLabel, tooltip, or wrap with Semantics',
+          suggestion: _buildSuggestion(widget),
         ));
       }
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final iconMatch =
+        RegExp(r'Icons\.(\w+)').firstMatch(widget.sourceCode);
+    if (iconMatch != null) {
+      final label = AccessibilityRule.iconNameToLabel(iconMatch.group(1)!);
+      return "Add tooltip: '$label' or semanticLabel: '$label' — screen readers cannot identify this ${widget.type} without a label";
+    }
+    return "Add a visible Text child, semanticLabel: '...', or tooltip: '...' to identify this ${widget.type} for screen readers";
   }
 
   // Removed - using centralized method from base class
@@ -1361,12 +1429,24 @@ class GestureDetectorAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Wrap with Semantics widget providing button role and label',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final code = widget.sourceCode;
+    final gestures = <String>[];
+    if (code.contains('onTap:')) gestures.add('onTap');
+    if (code.contains('onLongPress:')) gestures.add('onLongPress');
+    if (code.contains('onDoubleTap:')) gestures.add('onDoubleTap');
+    if (code.contains('onPan')) gestures.add('pan gesture');
+    if (gestures.isNotEmpty) {
+      return "Wrap with Semantics(button: true, label: 'Describe action') — ${gestures.join(', ')} detected but invisible to screen readers without semantics";
+    }
+    return "Wrap with Semantics(button: true, label: 'Describe what this does') to expose gesture interactions to screen readers";
   }
 
   // Removed - using centralized method from base class
@@ -1400,11 +1480,22 @@ class InkWellAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: 'WCAG-1.1.1',
-        suggestion: 'Add semanticLabel to Icon or wrap with Semantics widget',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final iconMatch =
+        RegExp(r'Icons\.(\w+)').firstMatch(widget.sourceCode);
+    if (iconMatch != null) {
+      final iconName = iconMatch.group(1)!;
+      final label = AccessibilityRule.iconNameToLabel(iconName);
+      return "Wrap with Semantics(label: '$label', button: true) or add semanticLabel: '$label' to the Icon — Icons.$iconName is not announced by screen readers without a label";
+    }
+    return "Wrap with Semantics(label: 'Describe this action', button: true) to make this InkWell accessible";
   }
 }
 
@@ -1435,11 +1526,22 @@ class IconButtonAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion: 'Add tooltip or semanticLabel to describe button purpose',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final iconMatch =
+        RegExp(r'Icons\.(\w+)').firstMatch(widget.sourceCode);
+    if (iconMatch != null) {
+      final iconName = iconMatch.group(1)!;
+      final label = AccessibilityRule.iconNameToLabel(iconName);
+      return "Add tooltip: '$label' — screen readers cannot determine what Icons.$iconName does without a label";
+    }
+    return "Add tooltip: 'Describe what this button does' or semanticLabel: '...' to this IconButton";
   }
 }
 
@@ -1515,7 +1617,7 @@ class DisabledElementsRule extends AccessibilityRule {
         column: widget.column,
         rule: ruleId,
         suggestion:
-            'Add tooltip or semanticLabel explaining why button is disabled',
+            "Wrap this disabled ${widget.type} with Tooltip(message: 'Complete required fields first') so screen reader users know why they cannot interact with it",
       ));
     }
 
@@ -1580,12 +1682,32 @@ class VagueTextContentRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: 'WCAG-2.4.4',
-        suggestion:
-            'Use more descriptive text that explains purpose or destination',
+        suggestion: _buildSuggestion(widget, vagueTexts),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget, List<String> vagueTexts) {
+    const suggestions = {
+      '"Click Here"':
+          '"View details" or "Open [page name]" — describe the destination',
+      '"Read More"':
+          '"Read more about [topic]" — add context about what they\'re reading',
+      '"Learn More"':
+          '"Learn more about [feature]" — specify the subject',
+      '"More"': '"More options" or "Show more [items]" — describe what\'s behind this',
+      '"Continue"':
+          '"Continue to checkout" or "Continue to next step" — describe the destination',
+    };
+    for (final entry in suggestions.entries) {
+      if (widget.sourceCode.contains(entry.key)) {
+        final found = entry.key.replaceAll('"', '');
+        return 'Replace "$found" with descriptive text like ${entry.value}';
+      }
+    }
+    return 'Use descriptive text that explains the purpose or destination for screen reader users';
   }
 }
 
@@ -1615,8 +1737,7 @@ class CheckboxAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Wrap Checkbox with Semantics widget providing label and state',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
@@ -1633,6 +1754,13 @@ class CheckboxAccessibilityRule extends AccessibilityRule {
     return widget.properties.containsKey('semanticLabel') ||
         isWrappedWithSemantics(widget) ||
         widget.sourceCode.contains('label:');
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    if (widget.type == 'Checkbox') {
+      return "Use CheckboxListTile(title: Text('Describe this option'), value: ...) for built-in label support, or wrap Checkbox with Semantics(label: 'Option name', checked: value)";
+    }
+    return "Add title: Text('Describe this option') to CheckboxListTile so screen readers can identify what this checkbox controls";
   }
 }
 
@@ -1661,12 +1789,23 @@ class SwitchAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Wrap Switch with Semantics widget providing label and state',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final valueMatch =
+        RegExp(r'value:\s*(\w+)').firstMatch(widget.sourceCode);
+    final varName = valueMatch?.group(1);
+    final isVar =
+        varName != null && varName != 'true' && varName != 'false';
+    if (isVar) {
+      return "Use SwitchListTile(title: Text('Describe what $varName controls'), value: $varName, ...) or wrap with Semantics(label: 'Toggle name', toggled: $varName)";
+    }
+    return "Use SwitchListTile(title: Text('Describe this toggle'), ...) or wrap Switch with Semantics(label: '...', toggled: value)";
   }
 }
 
@@ -1697,12 +1836,22 @@ class SliderAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Add semanticFormatterCallback or wrap with Semantics for proper value announcement',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final minMatch =
+        RegExp(r'min:\s*([\d.]+)').firstMatch(widget.sourceCode);
+    final maxMatch =
+        RegExp(r'max:\s*([\d.]+)').firstMatch(widget.sourceCode);
+    if (minMatch != null && maxMatch != null) {
+      return "Add semanticFormatterCallback: (v) => '\${v.round()}' to announce values — this Slider runs ${minMatch.group(1)} to ${maxMatch.group(1)}";
+    }
+    return "Add semanticFormatterCallback: (v) => '\${v.round()}' or wrap with Semantics(value: '\$value') to announce the slider value to screen readers";
   }
 }
 
@@ -1735,12 +1884,20 @@ class ProgressIndicatorAccessibilityRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion:
-            'Add semanticsLabel or wrap with Semantics to describe progress state',
+        suggestion: _buildSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    final hasValue = RegExp(r'value:\s*(?!null)\S')
+        .hasMatch(widget.sourceCode);
+    if (hasValue) {
+      return "Add semanticsLabel: 'Loading' and semanticsValue: '\${(value! * 100).round()}%' to ${widget.type} to announce progress percentage";
+    }
+    return "Add semanticsLabel: 'Loading' to ${widget.type} so screen readers announce when content is loading";
   }
 }
 
@@ -1932,7 +2089,7 @@ class MobileFocusManagementRule extends AccessibilityRule {
         column: widget.column,
         rule: ruleId,
         suggestion:
-            'Manage focus when navigating to ensure screen reader follows navigation',
+            "Call FocusScope.of(context).unfocus() before Navigator.push() so the keyboard dismisses and focus transfers correctly to the new screen for screen reader users",
       ));
     }
 
@@ -2141,7 +2298,7 @@ class MobileFormFieldGroupingRule extends AccessibilityRule {
         column: widget.column,
         rule: ruleId,
         suggestion:
-            'Group related form fields with Semantics for better navigation',
+            "Wrap this Form with Semantics(label: 'Form name', explicitChildNodes: true) so screen readers present the fields as a logical group",
       ));
     }
 
@@ -2177,11 +2334,21 @@ class MobileDismissibleRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion: 'Provide onDismissed callback and semantic feedback',
+        suggestion: _buildDismissibleSuggestion(widget),
       ));
     }
 
     return issues;
+  }
+
+  String _buildDismissibleSuggestion(WidgetInfo widget) {
+    final dirMatch =
+        RegExp(r'direction:\s*DismissDirection\.(\w+)').firstMatch(widget.sourceCode);
+    final direction = dirMatch?.group(1);
+    if (direction != null) {
+      return "Add onDismissed: (direction) { /* handle */ } — this Dismissible uses $direction direction. Also add background: widget with icon/label so users know swipe is available";
+    }
+    return "Add onDismissed callback and a background: widget with an icon/label to show the swipe action — without these, screen reader users cannot discover or trigger dismissal";
   }
 }
 
@@ -2213,7 +2380,8 @@ class MobileRefreshIndicatorRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion: 'Add semanticsLabel to describe refresh action',
+        suggestion:
+            "Add semanticsLabel: 'Refresh' to RefreshIndicator so screen readers announce when pull-to-refresh is triggered",
       ));
     }
 
@@ -2255,7 +2423,8 @@ class MobileTimeoutRule extends AccessibilityRule {
         line: widget.line,
         column: widget.column,
         rule: ruleId,
-        suggestion: 'Provide user control to extend or cancel timeouts',
+        suggestion:
+            "Store Timer in a variable (e.g. _timer = Timer(...)) and expose cancel/extend controls in the UI — users with disabilities need time to interact with time-sensitive content",
       ));
     }
 

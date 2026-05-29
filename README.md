@@ -184,3 +184,5 @@ export CONALYZ_NO_ANALYTICS=true
 # or
 export DO_NOT_TRACK=1
 ```
+
+When you opt out, a single one-time event is sent to record the opt-out (country and version only). After that, nothing is ever sent again.

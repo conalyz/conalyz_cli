@@ -1,3 +1,9 @@
+## 0.2.3
+
+* Improved accessibility rule suggestions to be context-aware and actionable — suggestions now include the actual icon name, detected fontSize value, input type, gesture type, slider min/max, and other details extracted from the source code instead of generic advice.
+* Added one-time anonymous opt-out event so regional opt-out rates can be understood without collecting ongoing data from opted-out users.
+* README: disclosed the one-time opt-out event in the telemetry section.
+
 ## 0.2.2
 
 * Fix telemetry events not being delivered by awaiting the HTTP request before process exit.

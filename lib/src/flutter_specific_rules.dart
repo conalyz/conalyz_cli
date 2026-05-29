@@ -85,13 +85,19 @@ class TapTargetSizeRule extends AccessibilityRule {
           line: widget.line,
           column: widget.column,
           rule: ruleId,
-          suggestion:
-              'Ensure interactive targets are at least 48x48dp. Use padding, constraints, or SizedBox to increase touch area.',
+          suggestion: _buildSuggestion(widget),
         ));
       }
     }
 
     return issues;
+  }
+
+  String _buildSuggestion(WidgetInfo widget) {
+    if (widget.type == 'GestureDetector' || widget.type == 'InkWell') {
+      return "Wrap ${widget.type} with ConstrainedBox(constraints: BoxConstraints(minWidth: 48, minHeight: 48)) or add padding: EdgeInsets.all(12) to reach the 48×48dp minimum tap target";
+    }
+    return "Ensure this ${widget.type} is at least 48×48dp — add padding: EdgeInsets.all(12) or wrap with SizedBox(width: 48, height: 48)";
   }
 
   bool _hasAdequateTapTargetSize(WidgetInfo widget) {
@@ -138,7 +144,7 @@ class AnimationControlRule extends AccessibilityRule {
           column: widget.column,
           rule: ruleId,
           suggestion:
-              'Check MediaQuery.of(context).disableAnimations or provide animation toggle',
+              "Check MediaQuery.of(context).disableAnimations at the top of build() and skip or reduce this ${widget.type} when true — users with vestibular disorders enable this in system accessibility settings",
         ));
       }
     }
@@ -515,6 +521,11 @@ class TextScalingSupportRule extends AccessibilityRule {
           hasFixedStyle) {
         final isMobile = platform == PlatformType.mobile;
         final issueId = isMobile ? 'mobile-text-scaling' : 'text-scaling';
+        final sizeMatch =
+            RegExp(r'fontSize:\s*(\d+)').firstMatch(sourceCode);
+        final foundSize = sizeMatch?.group(1);
+        final sizeNote =
+            foundSize != null ? ' (found fontSize: $foundSize)' : '';
 
         issues.add(AccessibilityIssue(
           id: '$issueId-${widget.line}',
@@ -526,8 +537,8 @@ class TextScalingSupportRule extends AccessibilityRule {
           column: widget.column,
           rule: ruleId,
           suggestion: isMobile
-              ? 'Use theme-based text styles, wrap with MediaQuery, or ensure textScaleFactor is not fixed to support dynamic text scaling'
-              : 'Use MediaQuery.textScaleFactorOf(context) or Theme-based text styles for proper scaling',
+              ? "Replace hardcoded fontSize$sizeNote with a Theme text style (e.g. Theme.of(context).textTheme.bodyMedium) so it scales with system font size settings"
+              : "Replace hardcoded fontSize$sizeNote with Theme.of(context).textTheme styles or use MediaQuery.textScaleFactorOf(context) for proper scaling",
         ));
       }
 
@@ -537,6 +548,9 @@ class TextScalingSupportRule extends AccessibilityRule {
           (sourceCode.contains('fontSize: 8') ||
               sourceCode.contains('fontSize: 9') ||
               sourceCode.contains('fontSize: 10'))) {
+        final smallSizeMatch =
+            RegExp(r'fontSize:\s*(8|9|10)').firstMatch(sourceCode);
+        final smallSize = smallSizeMatch?.group(1) ?? '';
         issues.add(AccessibilityIssue(
           id: 'small-text-${widget.line}',
           severity: 'high',
@@ -546,8 +560,9 @@ class TextScalingSupportRule extends AccessibilityRule {
           line: widget.line,
           column: widget.column,
           rule: ruleId,
-          suggestion:
-              'Use minimum font size of 12sp or theme-based text styles that scale appropriately',
+          suggestion: smallSize.isNotEmpty
+              ? "fontSize: $smallSize is below the 12sp minimum — use Theme.of(context).textTheme.bodySmall (14sp) or set fontSize to at least 12"
+              : "Use a minimum font size of 12sp or a Theme text style that scales appropriately",
         ));
       }
     }

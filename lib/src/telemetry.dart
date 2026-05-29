@@ -44,6 +44,38 @@ Future<void> checkFirstRunNotice() async {
       flagFile.writeAsStringSync('');
     }
   } catch (_) {}
+
+  // Fire a single one-time event when the user has opted out, so we can
+  // understand which regions opt out. After the flag is written, we never
+  // send anything again — fully respecting the opt-out going forward.
+  if (_shouldSkip()) {
+    await _maybeTrackOptOut();
+  }
+}
+
+Future<void> _maybeTrackOptOut() async {
+  try {
+    final home = _homeDir();
+    if (home.isEmpty) return;
+    final flagFile = File('$home/.config/conalyz/opt_out_tracked.flag');
+    if (flagFile.existsSync()) return;
+
+    await http
+        .post(
+          Uri.parse(_telemetryUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'client_id': _computeMachineId(),
+            'event': 'opted_out',
+            'version': _version,
+            'platform': Platform.operatingSystem,
+          }),
+        )
+        .timeout(const Duration(seconds: 3));
+
+    flagFile.parent.createSync(recursive: true);
+    flagFile.writeAsStringSync('');
+  } catch (_) {}
 }
 
 Map<String, dynamic>? _loadLastRun() {
