@@ -38,9 +38,8 @@ conalyz update
 ## Step 2: Determine the target path
 
 Ask the user for the path if not already provided. Common defaults:
-- `./lib` — entire project
-- `./lib/screens` — just screens
-- `lib/main.dart` — single file
+- `.` — entire current project (analysis runs on `./lib`)
+- `./my_app` — a specific project (analysis runs on `./my_app/lib`)
 
 Also check if they want a specific platform:
 - `--platform mobile` (default)
@@ -53,7 +52,7 @@ Also check if they want a specific platform:
 Always run with `--json` so results are machine-readable:
 
 ```bash
-conalyz --path <PATH> --platform <PLATFORM> --output ./conalyz_report --json
+conalyz --dir <PROJECT_ROOT> --platform <PLATFORM> --output ./conalyz_report --json
 ```
 
 Then read the JSON report:
@@ -174,7 +173,7 @@ Before editing files, always show the user the planned changes and ask for confi
 After applying, re-run conalyz to verify the issue count dropped:
 
 ```bash
-conalyz --path <PATH> --json --output ./conalyz_report_after
+conalyz --dir <PROJECT_ROOT> --json --output ./conalyz_report_after
 ```
 
 ---
@@ -256,3 +255,4 @@ After applying fixes, verify with:
 - For `insufficient_contrast` issues, suggest specific color values that meet WCAG AA (4.5:1 ratio for normal text, 3:1 for large text)
 - For custom widgets, wrap with `Semantics()` rather than modifying internal widget code
 - Suggest the user open `./conalyz_report/accessibility_report.html` for the full interactive report
+- Run `conalyz --dir .` from the project root to analyze the current project

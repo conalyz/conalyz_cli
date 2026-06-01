@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -107,9 +108,14 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
   final parser = ArgParser()
     ..addFlag('version',
         abbr: 'v', help: 'Show version information', negatable: false)
+    ..addOption('dir',
+        abbr: 'd',
+        help: 'Flutter project root; analysis runs on <dir>/lib',
+        mandatory: false)
     ..addOption('path',
         abbr: 'p',
-        help: 'Path to Flutter project directory or dart file',
+        help:
+            '(Deprecated) Path to Flutter project directory or dart file; use --dir instead',
         mandatory: false)
     ..addOption('platform',
         abbr: 't',
@@ -141,10 +147,16 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
       return;
     }
 
-    final projectPath = results['path'] as String?;
-    if (projectPath == null) {
-      print('Error: Project directory path is required. Use -h for help.');
-      exit(1);
+    // Resolve project path: --dir takes precedence, then --path (deprecated), then default to current dir.
+    final String projectPath;
+    if (results.wasParsed('path')) {
+      stderr.writeln(
+          'Warning: --path is deprecated, use --dir instead. '
+          'Example: conalyz --dir ${results['path']}');
+      projectPath = results['path'] as String;
+    } else {
+      final dir = (results['dir'] as String?) ?? '.';
+      projectPath = path.join(dir, 'lib');
     }
     final platform = results['platform'] as String;
     final outputDir = results['output'] as String;
@@ -298,6 +310,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
       projectPath: projectPath,
     );
 
+    await _printEndHints();
+
     // Exit with error code if critical issues found
     if ((analysisResult.issuesBySeverity['critical'] ?? 0) > 0) {
       print('');
@@ -370,13 +384,14 @@ void _showAnalysisHelp(ArgParser parser) {
       '  update                                             # Update Conalyz to the latest version');
   print('');
   print('Examples:');
+  print('  conalyz --dir .             # Analyze current Flutter project');
+  print('  conalyz --dir ./my_app      # Analyze a specific project');
   print(
-      '  conalyz --path ./my_app         # Analyze Flutter project for mobile');
-  print('  conalyz --path ./my_app --platform web  # Analyze for web platform');
-  print('  conalyz --output ./reports      # Custom output directory');
-  print('  conalyz usage                   # View your usage statistics');
-  print('  conalyz usage --detailed        # View detailed usage analytics');
-  print('  conalyz update                  # Update to the latest version');
+      '  conalyz --dir ./my_app --platform web  # Analyze for web platform');
+  print('  conalyz --output ./reports  # Custom output directory');
+  print('  conalyz usage               # View your usage statistics');
+  print('  conalyz usage --detailed    # View detailed usage analytics');
+  print('  conalyz update              # Update to the latest version');
   print('');
   print('Features:');
   print('  • Comprehensive Flutter widget accessibility analysis');
@@ -384,4 +399,70 @@ void _showAnalysisHelp(ArgParser parser) {
   print('  • Automatic usage tracking (lines scanned, analysis time)');
   print('  • JSON and HTML report generation');
   print('  • Detailed usage statistics and productivity insights');
+}
+
+// ── End-of-run hints ──────────────────────────────────────────────────────────
+
+/// Prints an update hint if a newer version is on pub.dev, and a runtime hint
+/// if the user is not already running the Homebrew binary.
+Future<void> _printEndHints() async {
+  final isHomebrew = await _isHomebrewOnPath();
+  if (isHomebrew) return;
+
+  final latestVersion = await _latestPubDevVersion()
+      .timeout(const Duration(milliseconds: 1500), onTimeout: () => null);
+
+  final hints = <String>[];
+  if (latestVersion != null && _isNewerVersion(latestVersion, version)) {
+    hints.add('  Update available: v$latestVersion → run conalyz update');
+  }
+  hints.add('  Runtime analysis available → brew install conalyz/tap/conalyz');
+
+  print('');
+  for (final h in hints) {
+    print(h);
+  }
+}
+
+/// Returns true when `which conalyz` resolves to a Homebrew-managed path.
+Future<bool> _isHomebrewOnPath() async {
+  try {
+    final result = await Process.run('which', ['conalyz']);
+    final p = result.stdout.toString().trim().toLowerCase();
+    return p.contains('homebrew') || p.contains('cellar');
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Fetches the latest published version from pub.dev. Returns null on failure.
+Future<String?> _latestPubDevVersion() async {
+  try {
+    final client = HttpClient();
+    final req = await client
+        .getUrl(Uri.parse('https://pub.dev/api/packages/conalyz'));
+    final res = await req.close();
+    final body = await res.transform(utf8.decoder).join();
+    client.close();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+    return (data['latest'] as Map<String, dynamic>)['version'] as String?;
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Returns true when [latest] is strictly newer than [current] (X.Y.Z).
+bool _isNewerVersion(String latest, String current) {
+  int part(String v, int i) {
+    final parts = v.split('.');
+    return i < parts.length ? int.tryParse(parts[i]) ?? 0 : 0;
+  }
+
+  for (var i = 0; i < 3; i++) {
+    final l = part(latest, i);
+    final c = part(current, i);
+    if (l > c) return true;
+    if (l < c) return false;
+  }
+  return false;
 }

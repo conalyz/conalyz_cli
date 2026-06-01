@@ -1,3 +1,11 @@
+## Unreleased
+
+* Added `--dir` flag (short: `-d`) that accepts a Flutter project root and derives `<dir>/lib` as the analysis path. `--path`/`-p` still works but now prints a deprecation warning. Running `conalyz` with no path flags defaults to the current project (`./lib`).
+* Upgrade hint printed at the bottom of every run; suppressed automatically when already on the latest distribution channel.
+* HTML report redesigned: cleaner layout, consistent typography, health score widget, per-file issue organisation with expandable cards and severity badges.
+* JSON report restructured: consistent top-level schema (`generatedAt`, `summary`, `violations`) with standardised field names across all violation types.
+* Added `conalyz-init` Claude Code skill (`conalyz/SKILL_INIT.md`). Copy to `.claude/commands/conalyz-init.md` in your Flutter project and invoke with `/conalyz-init` to generate `conalyz.yaml`.
+
 ## 0.2.3
 
 * Improved accessibility rule suggestions to be context-aware and actionable — suggestions now include the actual icon name, detected fontSize value, input type, gesture type, slider min/max, and other details extracted from the source code instead of generic advice.

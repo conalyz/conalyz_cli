@@ -10,17 +10,21 @@
 [![GitHub issues](https://img.shields.io/github/issues/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/conalyz/conalyz_cli/pulls)
 
-A powerful command-line tool for analyzing Flutter applications for accessibility issues. Conalyz uses AST-based analysis to provide comprehensive accessibility checks for both Material and Cupertino widgets, helping developers ensure their Flutter applications are accessible to all users.
+A command-line tool for analyzing Flutter applications for accessibility issues. Conalyz uses AST-based static analysis to provide comprehensive accessibility checks for both Material and Cupertino widgets, helping developers catch issues early — before the app runs.
 
 ## Features
 
-- **AST-based Analysis**: Fast and accurate analysis using Abstract Syntax Tree parsing
+- **AST-based Analysis**: Fast analysis using Abstract Syntax Tree parsing — no device or emulator needed
 - **Comprehensive Widget Coverage**: Supports Material, Cupertino, and custom widgets
 - **Multi-Platform Support**: Analyze for mobile and web platforms
-- **Interactive Reports**: Generate HTML reports with filtering and detailed issue information
-- **JSON Export**: Export results for CI/CD integration
+- **Interactive Reports**: HTML reports with per-file issue cards, severity filtering, and type filtering
+- **JSON Export**: Structured output for CI/CD integration
 - **Usage Tracking**: Track your analysis statistics and productivity insights
 - **WCAG Compliance**: Validates against Web Content Accessibility Guidelines
+
+> **Static analysis covers:** missing semantic labels, missing tooltips, inaccessible gesture detectors, form field labels, image alt text, vague labels, and known colour contrast issues detected from source code.
+>
+> **Not available in static mode:** actual touch target sizes, runtime contrast ratios, focus traversal order, and slider values — these require the app to be running. See [Runtime Analysis](#runtime-analysis) below.
 
 ## AI Agent Skill
 
@@ -48,10 +52,10 @@ export PATH="$PATH":"$HOME/.pub-cache/bin"
 
 ## Quick Start
 
-Navigate to your Flutter project and run:
+Navigate to your Flutter project root and run:
 
 ```bash
-conalyz --path ./lib
+conalyz --dir .
 ```
 
 Open the generated HTML report:
@@ -65,17 +69,17 @@ open accessibility_report/accessibility_report.html
 ### Basic Commands
 
 ```bash
-# Analyze a Flutter project
-conalyz --path /path/to/your/flutter/project/lib
+# Analyze the current Flutter project
+conalyz --dir .
 
-# Analyze a specific Dart file
-conalyz --path lib/main.dart
+# Analyze a specific project directory
+conalyz --dir /path/to/your/flutter/project
 
 # Analyze for web platform
-conalyz --path ./lib --platform web
+conalyz --dir . --platform web
 
 # Custom output directory
-conalyz --path ./lib --output ./reports
+conalyz --dir . --output ./reports
 
 # View usage statistics
 conalyz usage
@@ -90,7 +94,7 @@ conalyz update
 ### Command Line Options
 
 **Analysis Options:**
-- `--path, -p`: Path to Flutter project directory or Dart file (required)
+- `--dir, -d`: Flutter project root; analysis runs on `<dir>/lib` (default: current directory)
 - `--platform, -t`: Target platform: `mobile` or `web` (default: `mobile`)
 - `--output, -o`: Output directory for reports (default: `accessibility_report`)
 - `--json`: Generate JSON report (default: `true`)
@@ -109,30 +113,28 @@ conalyz usage [--detailed]
 ### HTML Report
 
 The HTML report provides:
-- Summary dashboard with issue counts by severity
-- Interactive filtering by type and severity
-- Detailed issue view with file locations and code snippets
-- WCAG compliance information
-- Step-by-step fix suggestions
+- Health score and summary dashboard with issue counts by severity
+- Per-file issue cards with expandable violation details and fix suggestions
+- Interactive filtering by severity and issue type
+- WCAG compliance references per check
 
 ### JSON Report
 
 The JSON report includes:
-- Summary statistics (total issues, severity breakdown, files analyzed)
-- Detailed issue list with file locations, line numbers, and suggestions
-- Analysis metadata (time, platform, lines scanned)
+- `generatedAt`, `summary` (total violations, severity breakdown, files analysed)
+- Flat `violations` array with `severity`, `type`, `message`, `file`, `line`, `column`, and `suggestion` per entry
 
 ## Examples
 
 ```bash
-# Basic analysis
-conalyz --path ./lib
+# Analyse current project
+conalyz --dir .
 
-# Analyze for web with custom output
-conalyz --path ./lib --platform web --output ./web-reports
+# Analyse a specific project for web
+conalyz --dir ./my_app --platform web --output ./web-reports
 
-# Analyze single file with debug output
-conalyz --path lib/screens/home_screen.dart --debug
+# Analyse with debug output
+conalyz --dir . --debug
 
 # Check your usage statistics
 conalyz usage --detailed
@@ -161,6 +163,43 @@ MIT License - see LICENSE file for details
 ## Support
 
 For issues and feature requests, please visit our [issue tracker](https://github.com/conalyz/conalyz_cli/issues).
+
+## Runtime Analysis
+
+Static analysis catches issues in source code, but some accessibility problems only surface when the app is actually running — touch targets that render too small, real contrast ratios after theme application, focus traversal order, and slider state.
+
+**Conalyz runtime analysis** connects to a running Flutter app, reads the live Semantics and Focus trees, and captures screenshots to measure these properties against WCAG criteria. It requires no code changes to your app and works on Android and iOS.
+
+### Install via Homebrew
+
+```bash
+brew install conalyz/tap/conalyz
+```
+
+Once installed, the `conalyz` command supersedes the pub.dev version and includes both static and runtime modes:
+
+```bash
+# Static analysis (same as pub.dev version)
+conalyz --dir .
+
+# Runtime analysis — connects to your running Flutter app
+conalyz manual --dir .   # prompt for screen names as you navigate
+conalyz auto   --dir .   # drive the app automatically using conalyz.yaml
+conalyz capture --dir .  # record a session and replay it
+```
+
+### Generate conalyz.yaml with AI
+
+If you use Claude Code, you can generate `conalyz.yaml` automatically from your router config and screen files. Copy the skill into your project:
+
+```bash
+# From your Flutter project root:
+cp path/to/conalyz_cli/conalyz/SKILL_INIT.md .claude/commands/conalyz-init.md
+```
+
+Then run `/conalyz-init` in Claude Code. Claude reads your router, extracts widget labels, shows a preview of the navigation flow, and writes `conalyz.yaml` after your approval.
+
+---
 
 ## Anonymized Telemetry
 
