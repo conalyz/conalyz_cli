@@ -12,7 +12,8 @@ dart test
 dart test test/optimized_ast_analyzer_test.dart
 
 # Run the CLI locally (without installing)
-dart run bin/conalyz.dart --path ./example
+dart run bin/conalyz.dart --dir .
+dart run bin/conalyz.dart --dir ./example --platform web
 
 # Format code
 dart format lib/ bin/ test/
@@ -37,7 +38,7 @@ This is a Dart CLI package (`bin/conalyz.dart` is the entry point) published to 
 4. Each `WidgetInfo` is matched against rules via `_getRelevantRules(widget.type)` — each `AccessibilityRule` declares `targetWidgets`, an empty list meaning "match all".
 5. Issues are collected as `AccessibilityIssue` objects and aggregated into an `AnalysisResult`.
 
-**Adding a new rule**: Create a class extending `AccessibilityRule` in `lib/src/flutter_specific_rules.dart` (Flutter-specific) or `lib/src/optimized_ast_analyzer.dart` (core/web), then register it in `_initializeRules()`. Web-only rules should return early when `platform != PlatformType.web`.
+**Adding a new rule**: Create a class extending `AccessibilityRule` in `lib/src/flutter_specific_rules.dart` (Flutter-specific), `lib/src/web_rules.dart` (web-only), or `lib/src/optimized_ast_analyzer.dart` (core rules), then register it in `_initializeRules()`. Web-only rules should return early when `platform != PlatformType.web`.
 
 **Report generation** (`lib/src/ast_report_generator.dart`): `AstReportGenerator` converts an `AnalysisResult` to JSON and/or HTML. HTML is self-contained with inline CSS/JS.
 
@@ -61,6 +62,10 @@ Each concern has its own test file:
 - `usage_storage_service_test.dart` / `usage_models_test.dart` — usage tracking
 - `update_command_test.dart` — update command
 - `integration_test.dart` — end-to-end analysis on temp directories
+
+## CI / exit codes
+
+The CLI exits with code `1` when any **critical**-severity issues are found, making it usable in CI pipelines. All other outcomes (including high/medium/low issues) exit `0`.
 
 ## Linting notes
 
