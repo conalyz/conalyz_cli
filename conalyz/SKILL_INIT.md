@@ -55,6 +55,18 @@ For each screen widget found, read the corresponding file. Extract interactive w
 | `FloatingActionButton` | `tooltip: '...'` |
 | `Semantics` wrapper | `label: '...'` |
 | `ListTile` | `title: Text('...')` |
+| `Tab` inside `TabBar` | Tab title + position — see format below |
+| `BottomNavigationBar` item | Item label + position — same format as TabBar |
+
+**TabBar and BottomNavigationBar label format:** Both use the same format — label + position + total count, exactly as announced by TalkBack/VoiceOver. Always use this format in `steps:`:
+
+| Label in code | Step to use in `conalyz.yaml` |
+|---------------|-------------------------------|
+| `Tab(text: 'Home')` — 1st of 3 | `tap "Home Tab 1 of 3"` |
+| `BottomNavigationBarItem(label: 'Search')` — 2nd of 3 | `tap "Search Tab 2 of 3"` |
+| `BottomNavigationBarItem(label: 'Profile')` — 3rd of 3 | `tap "Profile Tab 3 of 3"` |
+
+Flag these with ⚠️ — the exact count depends on how many items are rendered at runtime, not just how many are defined in code.
 
 Flag with ⚠️ any label that:
 - Comes from a variable (`Text(buttonLabel)`) rather than a string literal
@@ -67,7 +79,7 @@ Flag with ⚠️ any label that:
 
 Map which tap/action on each screen leads to which screen next. Build a depth-first traversal from the initial route (usually `/` or `home`). Each screen is visited once; back-navigation returns to the previous screen.
 
-For tab bars and bottom navigation: treat each tab as a sub-screen reached via `tap "Tab Label"` from the parent screen, then `back` to return.
+For tab bars and bottom navigation: treat each tab as a sub-screen reached via `tap "Title Tab N of M"` from the parent screen (see tab label format in Step 2). No `back` needed between tabs — just tap the next tab label.
 
 For auth-gated flows: start at the login/splash screen.
 
@@ -141,7 +153,7 @@ flow:
 
 - `Semantics(label:)` overrides that differ from the visible text
 - Merged nodes (`MergeSemantics`) that combine child labels
-- Multi-line labels normalised with `│` in the Semantics tree
+- Multi-line labels that span more than one widget
 - Labels from variables, computed strings, or l10n keys
 
 **What the runtime tool reports on mismatch:** `label not found: "Sign In"` — fix by replacing the label in `conalyz.yaml` with the exact string shown in the report, then re-run.
@@ -157,9 +169,6 @@ flow:
 Tell the user how to run the runtime tool:
 
 ```bash
-# From the Flutter project root:
-dart run bin/conalyz.dart auto --dir .
-# or, if the Homebrew binary is installed:
 conalyz auto --dir .
 ```
 

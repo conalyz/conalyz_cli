@@ -4,6 +4,7 @@
 [![Pub Version](https://img.shields.io/pub/v/conalyz.svg)](https://pub.dev/packages/conalyz)
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![Docs](https://img.shields.io/badge/Docs-docs.conalyz.com-82C88F)](https://docs.conalyz.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![GitHub stars](https://img.shields.io/github/stars/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/conalyz/conalyz_cli)](https://github.com/conalyz/conalyz_cli/network)
@@ -162,7 +163,8 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-For issues and feature requests, please visit our [issue tracker](https://github.com/conalyz/conalyz_cli/issues).
+- **Documentation:** [docs.conalyz.com](https://docs.conalyz.com)
+- **Issues & feature requests:** [GitHub issue tracker](https://github.com/conalyz/conalyz_cli/issues)
 
 ## Runtime Analysis
 
@@ -173,7 +175,8 @@ Static analysis catches issues in source code, but some accessibility problems o
 ### Install via Homebrew
 
 ```bash
-brew install conalyz/tap/conalyz
+brew tap conalyz/conalyz
+brew install conalyz/conalyz/conalyz
 ```
 
 Once installed, the `conalyz` command supersedes the pub.dev version and includes both static and runtime modes:
@@ -190,14 +193,16 @@ conalyz capture --dir .  # record a session and replay it
 
 ### Generate conalyz.yaml with AI
 
-If you use Claude Code, you can generate `conalyz.yaml` automatically from your router config and screen files. Copy the skill into your project:
+The `conalyz-init` skill generates `conalyz.yaml` automatically from your router config and screen files. It works with Claude Code, Cursor, Copilot, Windsurf, and 35+ other AI agents that support the skills protocol.
+
+Install the skill from your Flutter project root:
 
 ```bash
-# From your Flutter project root:
-cp path/to/conalyz_cli/conalyz/SKILL_INIT.md .claude/commands/conalyz-init.md
+mkdir -p .claude/commands && curl -o .claude/commands/conalyz-init.md \
+  https://raw.githubusercontent.com/conalyz/conalyz_cli/master/conalyz/SKILL_INIT.md
 ```
 
-Then run `/conalyz-init` in Claude Code. Claude reads your router, extracts widget labels, shows a preview of the navigation flow, and writes `conalyz.yaml` after your approval.
+Then invoke `/conalyz-init` in your AI agent. It reads your router, extracts widget labels, shows a preview of the navigation flow, and writes `conalyz.yaml` after your approval.
 
 ---
 

@@ -1,10 +1,14 @@
 ## Unreleased
 
+## 1.0.0
+
+**Breaking change:** JSON report schema restructured — if you consume `conalyz_report.json` in CI/CD pipelines, update your parsing logic. New top-level shape: `generatedAt`, `summary` (`totalViolations`, `bySeverity`, `filesAnalysed`), and a flat `violations` array with standardised field names across all violation types.
+
 * Added `--dir` flag (short: `-d`) that accepts a Flutter project root and derives `<dir>/lib` as the analysis path. `--path`/`-p` still works but now prints a deprecation warning. Running `conalyz` with no path flags defaults to the current project (`./lib`).
 * Upgrade hint printed at the bottom of every run; suppressed automatically when already on the latest distribution channel.
 * HTML report redesigned: cleaner layout, consistent typography, health score widget, per-file issue organisation with expandable cards and severity badges.
 * JSON report restructured: consistent top-level schema (`generatedAt`, `summary`, `violations`) with standardised field names across all violation types.
-* Added `conalyz-init` Claude Code skill (`conalyz/SKILL_INIT.md`). Copy to `.claude/commands/conalyz-init.md` in your Flutter project and invoke with `/conalyz-init` to generate `conalyz.yaml`.
+* Added `conalyz-init` skill (`conalyz/SKILL_INIT.md`) for AI agents (Claude Code, Cursor, Copilot, Windsurf, and others). Install with `curl` and invoke `/conalyz-init` to generate `conalyz.yaml` from your router and screen files.
 
 ## 0.2.3
 
