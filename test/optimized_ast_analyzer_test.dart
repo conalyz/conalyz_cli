@@ -554,6 +554,115 @@ void main() {
       expect(issues, isEmpty);
     });
   });
+
+  group('SemanticRoleCompletenessRule Tests', () {
+    late SemanticRoleCompletenessRule rule;
+
+    setUp(() {
+      rule = SemanticRoleCompletenessRule();
+    });
+
+    test('should flag Semantics without meaningful properties', () {
+      const code = '''
+        Semantics(child: Text('hi'))
+      ''';
+
+      final widget = _createWidgetInfo('Semantics', code, 1, 1);
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, hasLength(1));
+      expect(issues.first.severity, equals('high'));
+      expect(issues.first.type, equals('Incomplete Semantics'));
+      expect(issues.first.message, contains('Semantics widget'));
+    });
+
+    test('should not flag Semantics with a label', () {
+      const code = '''
+        Semantics(label: 'Profile', child: Icon(Icons.person))
+      ''';
+
+      final widget = _createWidgetInfo(
+          'Semantics', code, 1, 1, {'label': 'Profile'});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+
+    test('should flag SliverSemantics without meaningful properties', () {
+      const code = '''
+        SliverSemantics(sliver: SliverList(delegate: delegate))
+      ''';
+
+      final widget = _createWidgetInfo('SliverSemantics', code, 1, 1);
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, hasLength(1));
+      expect(issues.first.severity, equals('high'));
+      expect(issues.first.type, equals('Incomplete Semantics'));
+      // Message names the specific widget type, not a hardcoded 'Semantics'.
+      expect(issues.first.message, contains('SliverSemantics widget'));
+    });
+
+    test('should not flag SliverSemantics with a label', () {
+      const code = '''
+        SliverSemantics(label: 'Feed', sliver: SliverList(delegate: delegate))
+      ''';
+
+      final widget = _createWidgetInfo(
+          'SliverSemantics', code, 1, 1, {'label': 'Feed'});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+
+    test('should not flag SliverSemantics annotated with a modern role', () {
+      const code = '''
+        SliverSemantics(role: SemanticsRole.list, sliver: sliver)
+      ''';
+
+      final widget = _createWidgetInfo(
+          'SliverSemantics', code, 1, 1, {'role': 'SemanticsRole.list'});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+
+    test('should not flag SliverSemantics annotated with a headingLevel', () {
+      const code = '''
+        SliverSemantics(headingLevel: 1, sliver: sliver)
+      ''';
+
+      final widget = _createWidgetInfo(
+          'SliverSemantics', code, 1, 1, {'headingLevel': 1});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+
+    test('should not flag Semantics using a modern property (textField)', () {
+      const code = '''
+        Semantics(textField: true, child: child)
+      ''';
+
+      final widget = _createWidgetInfo(
+          'Semantics', code, 1, 1, {'textField': true});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+
+    test('should not flag SliverSemantics with only a scroll action', () {
+      const code = '''
+        SliverSemantics(onScrollDown: cb, sliver: sliver)
+      ''';
+
+      final widget = _createWidgetInfo(
+          'SliverSemantics', code, 1, 1, {'onScrollDown': 'cb'});
+      final issues = rule.check(widget, 'test.dart', PlatformType.mobile);
+
+      expect(issues, isEmpty);
+    });
+  });
 }
 
 // Helper function to create WidgetInfo for testing

@@ -1,5 +1,10 @@
 ## Unreleased
 
+## 1.1.0
+
+* Added support for Flutter's new sliver semantics widgets: `SliverSemantics` (the sliver-level equivalent of `Semantics`) and `SliverEnsureSemantics`. `SliverSemantics` is now recognised as a valid semantics wrapper and checked for meaningful properties, while `SliverEnsureSemantics` and `IndexedSemantics` are recognised as structural widgets.
+* Fixed a false positive where `Semantics`/`SliverSemantics` widgets annotated only with newer accessibility properties (`role`, `headingLevel`, `textField`, scroll actions, attributed labels/values/hints, and others) were incorrectly flagged as "Incomplete Semantics".
+
 ## 1.0.0
 
 **Breaking change:** JSON report schema restructured — if you consume `conalyz_report.json` in CI/CD pipelines, update your parsing logic. New top-level shape: `generatedAt`, `summary` (`totalViolations`, `bySeverity`, `filesAnalysed`), and a flat `violations` array with standardised field names across all violation types.

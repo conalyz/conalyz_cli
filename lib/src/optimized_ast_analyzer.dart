@@ -706,9 +706,10 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     final widgetLocation = lineInfo.getLocation(widgetNode.offset);
     final widgetLine = widgetLocation.lineNumber;
 
-    // Look for Semantics/MergeSemantics widgets that appear before this widget in the source
+    // Look for Semantics/MergeSemantics/SliverSemantics widgets that appear before this widget in the source
     for (final widget in widgets) {
-      if ((widget.type == 'Semantics' || widget.type == 'MergeSemantics') &&
+      if ((widget.type == 'Semantics' || widget.type == 'MergeSemantics' ||
+              widget.type == 'SliverSemantics') &&
           widget.line <= widgetLine) {
         // Check if this widget appears in the container widget's child property
         final semanticsSourceCode = widget.sourceCode;
@@ -747,7 +748,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     // Scrolling Widgets
     'CustomScrollView', 'GridView', 'ListView', 'PageView',
     'SingleChildScrollView',
-    'SliverGrid', 'SliverList',
+    'SliverEnsureSemantics', 'SliverGrid', 'SliverList',
 
     // Navigation and App Structure
     'AppBar', 'BackButton', 'BottomAppBar', 'BottomNavigationBar',
@@ -790,7 +791,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
     // Accessibility and Semantics Widgets
     'ExcludeSemantics', 'Focus', 'FocusScope', 'FocusTraversalOrder',
-    'MergeSemantics', 'Semantics',
+    'IndexedSemantics', 'MergeSemantics', 'Semantics', 'SliverSemantics',
 
     // Animation and Visual Effects
     'AnimatedContainer', 'AnimationController', 'ClipRRect', 'Hero', 'Material',
@@ -1231,21 +1232,21 @@ class SemanticRoleCompletenessRule extends AccessibilityRule {
   String get description => 'Semantics widget without meaningful properties';
 
   @override
-  List<String> get targetWidgets => ['Semantics'];
+  List<String> get targetWidgets => ['Semantics', 'SliverSemantics'];
 
   @override
   List<AccessibilityIssue> check(
       WidgetInfo widget, String filePath, PlatformType platform) {
     final issues = <AccessibilityIssue>[];
 
-    if (widget.type == 'Semantics' &&
+    if ((widget.type == 'Semantics' || widget.type == 'SliverSemantics') &&
         !_hasMeaningfulSemanticsProperties(widget)) {
       issues.add(AccessibilityIssue(
         id: 'semantic-role-completeness-${widget.line}',
         severity: 'high',
         type: 'Incomplete Semantics',
         message:
-            'Semantics widget without meaningful properties for Flutter accessibility',
+            '${widget.type} widget without meaningful properties for Flutter accessibility',
         file: filePath,
         line: widget.line,
         column: widget.column,
@@ -1292,6 +1293,32 @@ class SemanticRoleCompletenessRule extends AccessibilityRule {
       'currentValueLength',
       'textDirection',
       'sortKey',
+
+      // Modern / sliver-era semantic properties
+      'role',
+      'headingLevel',
+      'textField',
+      'toggled',
+      'mixed',
+      'focusable',
+      'isRequired',
+      'tooltip',
+      'blockUserActions',
+      'linkUrl',
+      'attributedLabel',
+      'attributedValue',
+      'attributedHint',
+      'increasedValue',
+      'decreasedValue',
+      'onIncrease',
+      'onDecrease',
+      'onScrollUp',
+      'onScrollDown',
+      'onScrollLeft',
+      'onScrollRight',
+      'onCopy',
+      'onCut',
+      'onPaste',
     ];
 
     return meaningfulProperties

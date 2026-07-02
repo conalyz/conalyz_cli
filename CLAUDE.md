@@ -48,6 +48,8 @@ This is a Dart CLI package (`bin/conalyz.dart` is the entry point) published to 
 
 **Platform-conditional rules**: `PlatformType` is passed through to every `rule.check()` call. Mobile-only rules check `if (platform != PlatformType.mobile) return issues;` at the top.
 
+**Line counting** (`lib/src/line_counter_service.dart`): Traverses a project directory for `.dart` files and totals their line counts, skipping unreadable files. Feeds the daily usage-limit checks in the usage tracking layer.
+
 ## Version constant
 
 The version string lives in **two** places — `pubspec.yaml` and `lib/src/constants.dart` (`conalyzVersion`). Both must be updated together when releasing. `bin/conalyz.dart` and `lib/src/telemetry.dart` import `conalyzVersion` from `constants.dart` and must not hardcode it.
@@ -62,6 +64,8 @@ Each concern has its own test file:
 - `usage_storage_service_test.dart` / `usage_models_test.dart` — usage tracking
 - `update_command_test.dart` — update command
 - `integration_test.dart` — end-to-end analysis on temp directories
+
+`test/test_all.dart` is an aggregate runner but is **stale** — it omits `tab_accessibility_test.dart` and `update_command_test.dart`. Use `dart test` (not `test_all.dart`) to run the full suite.
 
 ## CI / exit codes
 
