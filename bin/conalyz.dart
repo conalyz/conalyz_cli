@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:conalyz/src/static_analysis_config.dart';
+import 'package:conalyz/src/wrapper_review.dart';
 import 'package:args/args.dart';
 import 'package:conalyz/src/ast_report_generator.dart';
 import 'package:conalyz/src/optimized_ast_analyzer.dart';
@@ -126,6 +128,8 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         abbr: 'o',
         help: 'Output directory for reports',
         defaultsTo: 'accessibility_report')
+    ..addOption('config',
+        help: 'Static config path (default: <project>/conalyz.static.yaml)')
     ..addFlag('json', help: 'Generate JSON report', defaultsTo: true)
     ..addFlag('html', help: 'Generate HTML report', defaultsTo: true)
     ..addFlag('debug',
@@ -189,18 +193,28 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
       exit(1);
     }
 
+    final projectRoot = results.wasParsed('path')
+        ? StaticAnalysisConfig.resolveProjectRootForFile(projectPath)
+        : path.absolute((results['dir'] as String?) ?? '.');
+    final configuration = await prepareStaticAnalysis(
+      projectRoot: projectRoot,
+      configPath: results['config'] as String?,
+    );
     // Create output directory if it doesn't exist
     final outputDirectory = Directory(outputDir);
     if (!outputDirectory.existsSync()) {
       outputDirectory.createSync(recursive: true);
     }
 
+    print('');
     if (isFile) {
-      print(
-          '🔍 Analyzing Dart file for accessibility issues: ${projectPath.split('/').last}');
+      print('🔍 Analyzing Dart file for accessibility issues');
+      print('   File: $projectPath');
     } else {
-      print('🔍 Analyzing Flutter project for accessibility issues...');
+      print('🔍 Analyzing Flutter project for accessibility issues');
+      print('   Project: $projectRoot');
     }
+    print('');
     if (enableDebug) {
       print('📁 Project path: $projectPath');
       print('🎯 Target platform: $platform');
@@ -209,7 +223,7 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
 
     // Create optimized analyzer with built-in rules (includes all latest rules and widget recognition)
     final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(
-        enableDebugOutput: enableDebug);
+        enableDebugOutput: enableDebug, configuration: configuration);
 
     final startTime = DateTime.now();
 
@@ -250,25 +264,33 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
     // Generate reports
     final reportGenerator = AstReportGenerator();
 
+    if (generateJson || generateHtml) {
+      print('Reports');
+    }
     if (generateJson) {
       final jsonPath = path.join(outputDir, 'accessibility_report.json');
       await reportGenerator.generateJsonReport(analysisResult, jsonPath);
-      print('📄 JSON report generated at: $jsonPath');
+      print('  JSON: $jsonPath');
     }
 
     if (generateHtml) {
       final htmlPath = path.join(outputDir, 'accessibility_report.html');
       await reportGenerator.generateHtmlReport(analysisResult, htmlPath);
-      print('🌐 HTML report generated at: $htmlPath');
+      print('  HTML: $htmlPath');
     }
 
     print('');
     print('✅ Analysis complete!');
-    print('⏱️  Time: ${(duration.inMilliseconds / 1000).toStringAsFixed(1)}s');
     print(
-        '📊 Files: ${analysisResult.analyzedFiles.length} | Lines: ${analysisResult.linesScanned}');
-    print(
-        '🐛 Issues: ${analysisResult.totalIssues} (🔴${analysisResult.issuesBySeverity['critical']} 🟠${analysisResult.issuesBySeverity['high']} 🟡${analysisResult.issuesBySeverity['medium']} 🟢${analysisResult.issuesBySeverity['low']})');
+        '  Duration: ${(duration.inMilliseconds / 1000).toStringAsFixed(1)}s');
+    print('  Files:    ${analysisResult.analyzedFiles.length}');
+    print('  Lines:    ${analysisResult.linesScanned}');
+    print('');
+    print('Issues: ${analysisResult.totalIssues}');
+    print('  🔴 Critical: ${analysisResult.issuesBySeverity['critical'] ?? 0}');
+    print('  🟠 High:     ${analysisResult.issuesBySeverity['high'] ?? 0}');
+    print('  🟡 Medium:   ${analysisResult.issuesBySeverity['medium'] ?? 0}');
+    print('  🟢 Low:      ${analysisResult.issuesBySeverity['low'] ?? 0}');
 
     if (enableDebug) {
       print('');
@@ -375,6 +397,15 @@ void _showAnalysisHelp(ArgParser parser) {
   print('Analysis Options:');
   print(parser.usage);
   print('');
+  print('Custom semantics wrappers:');
+  print('  First interactive run: discover wrappers in the app and local path packages.');
+  print('  Review each supported wrapper type and choose which mappings to include.');
+  print('  Save approvals and the review date to <project>/conalyz.static.yaml,');
+  print('  then continue accessibility analysis using those mappings.');
+  print('  Later runs ask whether to review again; No uses the saved mappings.');
+  print('  CI/non-interactive runs use saved config without discovery or prompts.');
+  print('  Run flutter pub get before the first review.');
+  print('');
   print('Commands:');
   print(
       '  usage                                              # Show usage statistics and analytics');
@@ -389,12 +420,14 @@ void _showAnalysisHelp(ArgParser parser) {
   print(
       '  conalyz --dir ./my_app --platform web  # Analyze for web platform');
   print('  conalyz --output ./reports  # Custom output directory');
+  print('  conalyz --dir . --config ./team-static.yaml  # Custom static config');
   print('  conalyz usage               # View your usage statistics');
   print('  conalyz usage --detailed    # View detailed usage analytics');
   print('  conalyz update              # Update to the latest version');
   print('');
   print('Features:');
   print('  • Comprehensive Flutter widget accessibility analysis');
+  print('  • Automatic discovery and review of custom semantics wrappers');
   print('  • Support for both mobile and web platforms');
   print('  • Automatic usage tracking (lines scanned, analysis time)');
   print('  • JSON and HTML report generation');

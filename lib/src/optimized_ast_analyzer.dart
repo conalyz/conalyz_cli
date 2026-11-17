@@ -5,6 +5,9 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
+import 'semantic_wrapper.dart';
+import 'static_analysis_config.dart';
+import 'wrapper_resolution.dart';
 import 'flutter_specific_rules.dart';
 import 'platform_type.dart';
 
@@ -52,6 +55,7 @@ class AnalysisResult {
   final String timestamp;
   final PlatformType platform;
   final int linesScanned;
+  final Map<String, dynamic> configuration;
 
   AnalysisResult({
     required this.totalIssues,
@@ -61,6 +65,7 @@ class AnalysisResult {
     required this.timestamp,
     required this.platform,
     required this.linesScanned,
+    this.configuration = const {},
   });
 
   Map<String, dynamic> toJson() => {
@@ -71,6 +76,7 @@ class AnalysisResult {
         'timestamp': timestamp,
         'platform': platform.toString().split('.').last,
         'linesScanned': linesScanned,
+        'configuration': configuration,
       };
 }
 
@@ -130,9 +136,13 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
   final List<AccessibilityRule> _rules = [];
   int _issueIdCounter = 1;
   final bool _enableDebugOutput;
+  final StaticAnalysisConfig? _configuration;
+  WrapperResolution? _wrapperResolution;
 
-  OptimizedAstFlutterAccessibilityAnalyzer({bool enableDebugOutput = false})
-      : _enableDebugOutput = enableDebugOutput {
+  OptimizedAstFlutterAccessibilityAnalyzer(
+      {bool enableDebugOutput = false, StaticAnalysisConfig? configuration})
+      : _enableDebugOutput = enableDebugOutput,
+        _configuration = configuration {
     _initializeRules();
   }
 
@@ -196,7 +206,20 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
   }
 
   /// Analyze a single Dart file for accessibility issues
-  Future<AnalysisResult> analyzeFile(
+  Future<AnalysisResult> analyzeFile(String filePath,
+      {required PlatformType platform}) async {
+    if (_configuration?.registeredWrappers.isNotEmpty ?? false) {
+      _wrapperResolution = WrapperResolution(_configuration!.projectRoot);
+    }
+    try {
+      return await _analyzeFile(filePath, platform: platform);
+    } finally {
+      await _wrapperResolution?.dispose();
+      _wrapperResolution = null;
+    }
+  }
+
+  Future<AnalysisResult> _analyzeFile(
     String filePath, {
     required PlatformType platform,
   }) async {
@@ -232,10 +255,24 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       timestamp: DateTime.now().toIso8601String(),
       platform: platform,
       linesScanned: fileResult?.linesScanned ?? 0,
+      configuration: _configuration?.toMetadata() ?? const {},
     );
   }
 
-  Future<AnalysisResult> analyzeProject(
+  Future<AnalysisResult> analyzeProject(String projectPath,
+      {required PlatformType platform}) async {
+    if (_configuration?.registeredWrappers.isNotEmpty ?? false) {
+      _wrapperResolution = WrapperResolution(_configuration!.projectRoot);
+    }
+    try {
+      return await _analyzeProject(projectPath, platform: platform);
+    } finally {
+      await _wrapperResolution?.dispose();
+      _wrapperResolution = null;
+    }
+  }
+
+  Future<AnalysisResult> _analyzeProject(
     String projectPath, {
     required PlatformType platform,
   }) async {
@@ -279,6 +316,7 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
       timestamp: DateTime.now().toIso8601String(),
       platform: platform,
       linesScanned: totalLinesScanned,
+      configuration: _configuration?.toMetadata() ?? const {},
     );
   }
 
@@ -392,8 +430,11 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
         print('🔍 Creating visitor...');
         print('🔍 Building parent map...');
       }
+      final registeredCalls = await _wrapperResolution?.calls(
+              filePath, _configuration!.registeredWrappers) ??
+          <int, SemanticWrapper>{};
       final visitor = OptimizedWidgetExtractionVisitor(
-          content, parseResult.unit, _enableDebugOutput);
+          content, parseResult.unit, _enableDebugOutput, registeredCalls);
       visitor.buildParentMap(parseResult.unit);
 
       if (_enableDebugOutput) {
@@ -420,6 +461,8 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
               '  Processing widget ${i + 1}/${visitor.widgets.length}: ${widget.type}');
         }
 
+        // Wrapper constructors establish context; the normal rules check their descendants.
+        if (registeredCalls.containsKey(widget.node.offset)) continue;
         final relevantRules = _getRelevantRules(widget.type);
 
         for (final rule in relevantRules) {
@@ -539,9 +582,11 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   final Map<AstNode, AstNode?> _parentMap = {};
   final Map<AstNode, WidgetInfo> _widgetsByNode = {};
   final bool _enableDebugOutput;
+  final Map<int, SemanticWrapper> _registeredCalls;
 
   OptimizedWidgetExtractionVisitor(
-      this.sourceCode, this.compilationUnit, this._enableDebugOutput);
+      this.sourceCode, this.compilationUnit, this._enableDebugOutput,
+      [this._registeredCalls = const {}]);
 
   /// Build parent map for the entire AST (optimized)
   void buildParentMap(AstNode root) {
@@ -585,6 +630,12 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
     _trackParentChild(node);
 
+    final registered = _registeredCalls[node.offset];
+    if (registered != null) {
+      _addWidget(registered.widget, node, node.argumentList.arguments);
+      super.visitInstanceCreationExpression(node);
+      return;
+    }
     // Extract constructor name more efficiently
     final type = node.constructorName.type;
     final constructorName = type.name.lexeme;
@@ -618,6 +669,12 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     _trackParentChild(node);
 
+    final registered = _registeredCalls[node.offset];
+    if (registered != null) {
+      _addWidget(registered.widget, node, node.argumentList.arguments);
+      super.visitMethodInvocation(node);
+      return;
+    }
     final methodName = node.methodName.name;
     if (_enableDebugOutput) {
       print('Found method invocation: $methodName');
@@ -708,6 +765,8 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   /// Checks whether an ancestor provides meaningful semantic information.
   bool isWrappedWithSemantics(AstNode widgetNode) {
     return _findAncestorWidget(widgetNode, (wrapper) {
+          final registered = _registeredCalls[wrapper.node.offset];
+          if (registered != null) return _hasLabel(wrapper, registered.label);
           if (wrapper.type == 'MergeSemantics') return true;
           if (wrapper.type != 'Semantics' &&
               wrapper.type != 'SliverSemantics') {
@@ -721,6 +780,8 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
   bool isWrappedWithAccessibleLabel(AstNode widgetNode) {
     return _findAncestorWidget(widgetNode, (wrapper) {
+          final registered = _registeredCalls[wrapper.node.offset];
+          if (registered != null) return _hasLabel(wrapper, registered.label);
           return (wrapper.type == 'Semantics' ||
                   wrapper.type == 'SliverSemantics') &&
               (_hasLabel(wrapper, 'label') ||
@@ -745,7 +806,25 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
     AstNode? ancestor = widgetNode.parent;
     while (ancestor != null) {
       final candidate = _widgetsByNode[ancestor];
-      if (candidate != null && matches(candidate)) return candidate;
+      if (candidate != null) {
+        final registered = _registeredCalls[candidate.node.offset];
+        if (registered != null) {
+          final node = candidate.node;
+          final arguments = node is InstanceCreationExpression
+              ? node.argumentList.arguments
+              : (node as MethodInvocation).argumentList.arguments;
+          final child = arguments
+              .whereType<NamedArgument>()
+              .where((a) => a.name.lexeme == registered.child);
+          if (child.isEmpty ||
+              widgetNode.offset < child.first.argumentExpression.offset ||
+              widgetNode.end > child.first.argumentExpression.end) {
+            ancestor = ancestor.parent;
+            continue;
+          }
+        }
+        if (matches(candidate)) return candidate;
+      }
       ancestor = ancestor.parent;
     }
     return null;

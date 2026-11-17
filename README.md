@@ -92,11 +92,49 @@ conalyz usage --detailed
 conalyz update
 ```
 
+### Custom semantics wrappers
+
+On the first interactive analysis, Conalyz discovers custom semantics wrappers
+in the project's `lib/` directory and recursively referenced local `path:`
+packages. Run `flutter pub get` first so dependencies can be resolved. Hosted and
+Git packages are not scanned.
+
+Each supported wrapper type is reviewed once, regardless of how many times the
+app uses it. Conalyz shows its definition and detected label/child mapping and
+asks whether to include it. Approved mappings are saved together in the app's
+`conalyz.static.yaml`, then accessibility analysis continues using those mappings.
+The file records `wrapper_review.last_reviewed_at`, even when no wrappers are
+approved. Commit the file to share the reviewed mappings with teammates and CI.
+
+On later interactive runs, Conalyz asks:
+
+```text
+Review custom semantics wrappers again? [y/N]
+```
+
+Choose **No** to analyze immediately with the saved mappings. Choose **Yes** to
+discover and review again. Unchanged approvals default to Yes; new or changed
+mappings require approval. Declined, missing, or unsupported registrations are
+removed during that review. Other configuration settings and comments are kept.
+Ordinary runs leave the configuration and review timestamp unchanged.
+
+CI and non-interactive runs never prompt, discover wrappers, or create configuration.
+They use saved mappings when available; otherwise they perform standard analysis.
+Use `--config <file>` to select another static configuration file.
+
+The first version supports stateless widget classes that directly return Flutter
+`Semantics`, forwarding final label and child fields through the named parameters
+of a single unnamed constructor. Conditional semantics, transformed labels, and
+wrapper chains are reported as unsupported. Registration does not mark every usage
+accessible: omitted, null, or empty labels still produce missing-label findings,
+and other accessibility checks remain active.
+
 ### Command Line Options
 
 **Analysis Options:**
 - `--dir, -d`: Flutter project root; analysis runs on `<dir>/lib` (default: current directory)
 - `--platform, -t`: Target platform: `mobile` or `web` (default: `mobile`)
+- `--config`: Static configuration path (default: `<project>/conalyz.static.yaml`)
 - `--output, -o`: Output directory for reports (default: `accessibility_report`)
 - `--json`: Generate JSON report (default: `true`)
 - `--html`: Generate HTML report (default: `true`)
