@@ -129,7 +129,10 @@ Future<void> _handleAnalysisCommand(List<String> arguments) async {
         help: 'Output directory for reports',
         defaultsTo: 'accessibility_report')
     ..addOption('config',
-        help: 'Static config path (default: <project>/conalyz.static.yaml)')
+        valueHelp: 'file',
+        help: 'Read approved custom wrapper mappings from this YAML file.\n'
+            'Wrapper reviews also save to this file.\n'
+            'Default: <project>/conalyz.static.yaml')
     ..addFlag('json', help: 'Generate JSON report', defaultsTo: true)
     ..addFlag('html', help: 'Generate HTML report', defaultsTo: true)
     ..addFlag('debug',
@@ -406,6 +409,14 @@ void _showAnalysisHelp(ArgParser parser) {
   print('  CI/non-interactive runs use saved config without discovery or prompts.');
   print('  Run flutter pub get before the first review.');
   print('');
+  print('Saved wrapper file (--config):');
+  print('  The YAML file contains wrappers you approved and their parameter mappings.');
+  print('  Normally, Conalyz reads and saves <project>/conalyz.static.yaml automatically.');
+  print('  --config chooses a different file instead; it does not merge the default.');
+  print('  Relative paths start from the directory where you run the command.');
+  print('  Interactive reviews can create or update that file. CI only reads it.');
+  print('  Most projects do not need this option.');
+  print('');
   print('Commands:');
   print(
       '  usage                                              # Show usage statistics and analytics');
@@ -420,7 +431,10 @@ void _showAnalysisHelp(ArgParser parser) {
   print(
       '  conalyz --dir ./my_app --platform web  # Analyze for web platform');
   print('  conalyz --output ./reports  # Custom output directory');
-  print('  conalyz --dir . --config ./team-static.yaml  # Custom static config');
+  print('');
+  print('  # Use team wrapper mappings instead of conalyz.static.yaml');
+  print('  conalyz --dir . --config ./team-static.yaml');
+  print('');
   print('  conalyz usage               # View your usage statistics');
   print('  conalyz usage --detailed    # View detailed usage analytics');
   print('  conalyz update              # Update to the latest version');
