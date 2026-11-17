@@ -1,10 +1,21 @@
 ## Unreleased
 
-* Added automatic first-run discovery and per-type approval of custom semantics wrappers in the app and local path packages. Approved library-qualified mappings and the completed review timestamp are saved to `conalyz.static.yaml` and applied to the same analysis.
-* Later interactive runs offer to review wrappers again; declining uses saved mappings without discovery or rewriting configuration. CI and non-interactive runs use saved configuration without discovery, prompts, or config creation. JSON and HTML reports include wrapper configuration metadata.
+## 1.2.0
 
-* Fixed built-in semantics and tooltip wrapper detection to follow AST ancestry. Identical widgets in sibling subtrees or other functions no longer inherit accessibility information from unrelated wrappers.
-* Empty and key-only `Semantics`/`SliverSemantics` wrappers no longer suppress wrapper-based findings. Button and IconButton label checks require a nonempty label or attributed label; `MergeSemantics` still supplies grouping context but does not supply a button label. Existing projects may gain findings where wrappers were previously misidentified.
+### Added
+
+* Automatic discovery of custom semantics wrappers during the first interactive analysis. Review each supported wrapper type in the app and recursively referenced local path packages, without a separate setup command or handwritten mappings.
+* Approved wrapper mappings and the completed review timestamp are saved together in `conalyz.static.yaml` and applied to the same analysis. Initial support covers stateless wrappers that directly forward label and child parameters into Flutter `Semantics`; unsupported candidates show an explanation.
+* Optional `--config <file>` to read mappings from, and save review decisions to, a different YAML file. CI and non-interactive runs only read saved configuration, without discovery, prompts, or config creation.
+* Repeat-review prompt on later interactive runs. Declining uses saved mappings without discovery or rewriting the config. Reviewing again can update approvals while preserving unrelated settings and comments.
+* Wrapper configuration metadata in JSON and HTML reports, readable terminal sections, and expanded CLI help and README examples.
+
+### Fixed
+
+* Built-in semantics and tooltip wrapper detection now follows actual AST ancestry. Identical widgets in sibling subtrees or other functions no longer inherit accessibility information from unrelated wrappers.
+* Empty and key-only `Semantics`/`SliverSemantics` wrappers no longer suppress wrapper-based findings. Button and IconButton label checks require a nonempty plain or attributed label; `MergeSemantics` still supplies grouping context but does not itself supply a button label.
+
+Existing projects may gain findings where wrappers were previously misidentified. Critical findings continue to cause an exit code of `1`.
 
 ## 1.1.0
 
