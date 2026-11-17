@@ -17,6 +17,7 @@ A command-line tool for analyzing Flutter applications for accessibility issues.
 
 - **AST-based Analysis**: Fast analysis using Abstract Syntax Tree parsing — no device or emulator needed
 - **Comprehensive Widget Coverage**: Supports Material, Cupertino, and custom widgets
+- **Custom Semantics Wrappers**: Discover wrappers in your app and local packages, review each type, and reuse approved mappings during static analysis
 - **Multi-Platform Support**: Analyze for mobile and web platforms
 - **Interactive Reports**: HTML reports with per-file issue cards, severity filtering, and type filtering
 - **JSON Export**: Structured output for CI/CD integration
@@ -53,11 +54,16 @@ export PATH="$PATH":"$HOME/.pub-cache/bin"
 
 ## Quick Start
 
-Navigate to your Flutter project root and run:
+Navigate to your Flutter project root, resolve its dependencies, and run:
 
 ```bash
+flutter pub get
 conalyz --dir .
 ```
+
+On the first interactive run, review any supported custom semantics wrappers.
+Conalyz saves the approved mappings in `conalyz.static.yaml` and continues analysis.
+On later runs, you can skip review and use the saved mappings.
 
 Open the generated HTML report:
 
@@ -92,11 +98,185 @@ conalyz usage --detailed
 conalyz update
 ```
 
+### Custom semantics wrapper discovery
+
+If your company wraps Flutter's `Semantics` in its own reusable widgets, Conalyz
+can learn which parameters provide a label and which parameter contains the child.
+This reduces missing-label findings caused by unrecognized design-system wrappers.
+No separate setup command or handwritten mapping is needed.
+
+#### 1. Run normal analysis
+
+```bash
+flutter pub get
+conalyz --dir .
+```
+
+On the first interactive run, Conalyz searches the project's `lib/` directory and
+recursively referenced local `path:` packages. For example, wrappers in this local
+design-system package are included:
+
+```yaml
+dependencies:
+  company_design_system:
+    path: ../company_design_system
+```
+
+Hosted pub.dev packages, Git dependencies, and unrelated directories are not scanned.
+The configuration belongs to the app being analyzed, including approvals for wrappers
+found in local packages.
+
+#### 2. Review each detected wrapper type
+
+A supported wrapper forwards named parameters directly into Flutter `Semantics`.
+For example, in `lib/widgets/company_semantics.dart`:
+
+```dart
+import 'package:flutter/widgets.dart';
+
+class CompanySemantics extends StatelessWidget {
+  final String? accessibilityLabel;
+  final Widget child;
+
+  const CompanySemantics({
+    super.key,
+    this.accessibilityLabel,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: accessibilityLabel,
+        child: child,
+      );
+}
+```
+
+The app can then use it around a control:
+
+```dart
+CompanySemantics(
+  accessibilityLabel: 'Add item',
+  child: IconButton(
+    icon: const Icon(Icons.add),
+    onPressed: () {},
+  ),
+)
+```
+
+Conalyz shows numbered candidates, definition locations, and detected mappings:
+
+```text
+  1. CompanySemantics
+     Source: lib/widgets/company_semantics.dart:3
+     Library: package:my_app/widgets/company_semantics.dart
+     Parameters:
+       • accessibilityLabel → Semantics.label
+       • child → Semantics.child
+
+     Include this wrapper in static analysis? [y/N]
+```
+
+- Approve or skip each **wrapper type**, not every usage. A wrapper used 200 times
+  requires one decision in that review.
+- Different wrapper types are reviewed separately. Only the approved types are saved.
+- New or changed mappings default to **No**; enter `y` to include them.
+- Unsupported candidates show their source and an explanation, without an approval prompt.
+
+The first version supports stateless widget classes with an unconditional, direct
+`Semantics` return, final label/child fields, and one unnamed constructor forwarding
+those fields through named parameters. Conditional semantics, transformed labels,
+wrapper chains, function wrappers, and inference of roles/hints/values are outside
+this first version.
+
+#### 3. Reuse the saved approvals
+
+After all decisions, Conalyz saves the approved mappings together in
+`<project>/conalyz.static.yaml` and uses them in the **same analysis**. A generated
+file for an app named `my_app` looks like this:
+
+```yaml
+semanticWrappers:
+  package:my_app/widgets/company_semantics.dart#CompanySemantics:
+    widget: CompanySemantics
+    library: package:my_app/widgets/company_semantics.dart
+    label: accessibilityLabel
+    child: child
+wrapper_review:
+  last_reviewed_at: '2026-11-17T05:00:00.000Z'
+```
+
+The library identity distinguishes unrelated classes with the same name. The review
+timestamp records when review finished, including a review with no approved wrappers.
+Commit this file so teammates and CI use the same mappings; Git provides the change
+history. You do not need to create this YAML manually.
+
+Registration is not blanket approval of a widget. A missing, literal null, empty,
+or whitespace-only forwarded label still produces missing-label findings, and the
+mapping applies only inside its configured child argument. Other accessibility
+checks remain active. JSON and HTML reports include the loaded wrapper configuration
+and review timestamp when a config file is used.
+
+#### 4. Review again when wrappers change
+
+On later interactive runs, Conalyz asks:
+
+```text
+Review custom semantics wrappers again? [y/N]
+```
+
+- **No** (the default): analyze with saved mappings, without discovery or rewriting
+  the YAML or its timestamp.
+- **Yes**: discover again and review each supported type. An unchanged approval
+  defaults to Yes; new or changed mappings require approval. Previously skipped
+  wrappers can be offered again.
+
+During an explicit review, declined registrations and definitions that are missing
+or unsupported are removed, with a message explaining the removal. Other settings
+and comments are preserved. Configuration is saved after the review completes;
+cancelling before completion does not save partial decisions. Without a review,
+Conalyz continues using the saved contract rather than rechecking wrapper definitions.
+
+#### Optional: choose a different configuration file
+
+Most projects should simply use `conalyz --dir .`. That automatically reads and saves
+`conalyz.static.yaml` in the selected project.
+
+Use `--config` only when you want the approved wrapper mappings stored in a different
+file, such as a file your team has chosen to keep under another name:
+
+```bash
+# Read approved mappings from team-static.yaml instead of conalyz.static.yaml.
+# If you choose to review wrappers, save the decisions to team-static.yaml too.
+conalyz --dir . --config ./team-static.yaml
+```
+
+`team-static.yaml` is an example filename you choose, not a built-in preset. It uses
+the same generated YAML format shown above. The selected file **replaces** the default
+for that run; Conalyz does not copy or merge `conalyz.static.yaml` into it. If it does
+not exist, an interactive run can create it after reviewing the discovered wrappers.
+
+`--dir` selects the project to analyze. `--config` selects the mapping file to read
+and save. Relative `--config` paths start from your current working directory, not
+from the directory passed to `--dir`. Neither option changes where reports are saved;
+use `--output` for that.
+
+#### CI and non-interactive runs
+
+CI and non-interactive runs never discover wrappers, prompt, or create configuration.
+They read the saved mappings when available and perform standard analysis when the
+default config is absent. An explicitly selected `--config` file must exist in CI;
+a missing file or invalid configuration fails the command.
+
+`conalyz.static.yaml` contains source-analysis wrapper mappings. It is separate from
+`conalyz.yaml`, which describes navigation for runtime analysis.
+
 ### Command Line Options
 
 **Analysis Options:**
 - `--dir, -d`: Flutter project root; analysis runs on `<dir>/lib` (default: current directory)
 - `--platform, -t`: Target platform: `mobile` or `web` (default: `mobile`)
+- `--config <file>`: Read approved wrapper mappings from this YAML file and save any completed wrapper review back to it. Optional; defaults to `<project>/conalyz.static.yaml`. Replaces the default file for the run; see [the explanation above](#optional-choose-a-different-configuration-file).
 - `--output, -o`: Output directory for reports (default: `accessibility_report`)
 - `--json`: Generate JSON report (default: `true`)
 - `--html`: Generate HTML report (default: `true`)
@@ -118,12 +298,14 @@ The HTML report provides:
 - Per-file issue cards with expandable violation details and fix suggestions
 - Interactive filtering by severity and issue type
 - WCAG compliance references per check
+- Loaded custom-wrapper configuration and review timestamp, when a config is used
 
 ### JSON Report
 
 The JSON report includes:
 - `generatedAt`, `summary` (total violations, severity breakdown, files analysed)
 - Flat `violations` array with `severity`, `type`, `message`, `file`, `line`, `column`, and `suggestion` per entry
+- `configuration` metadata with the config path, wrapper mappings, and review timestamp when a config is used
 
 ## Examples
 

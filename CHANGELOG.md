@@ -1,5 +1,11 @@
 ## Unreleased
 
+* Added automatic first-run discovery and per-type approval of custom semantics wrappers in the app and local path packages. Approved library-qualified mappings and the completed review timestamp are saved to `conalyz.static.yaml` and applied to the same analysis.
+* Later interactive runs offer to review wrappers again; declining uses saved mappings without discovery or rewriting configuration. CI and non-interactive runs use saved configuration without discovery, prompts, or config creation. JSON and HTML reports include wrapper configuration metadata.
+
+* Fixed built-in semantics and tooltip wrapper detection to follow AST ancestry. Identical widgets in sibling subtrees or other functions no longer inherit accessibility information from unrelated wrappers.
+* Empty and key-only `Semantics`/`SliverSemantics` wrappers no longer suppress wrapper-based findings. Button and IconButton label checks require a nonempty label or attributed label; `MergeSemantics` still supplies grouping context but does not supply a button label. Existing projects may gain findings where wrappers were previously misidentified.
+
 ## 1.1.0
 
 * Added support for Flutter's new sliver semantics widgets: `SliverSemantics` (the sliver-level equivalent of `Semantics`) and `SliverEnsureSemantics`. `SliverSemantics` is now recognised as a valid semantics wrapper and checked for meaningful properties, while `SliverEnsureSemantics` and `IndexedSemantics` are recognised as structural widgets.

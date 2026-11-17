@@ -23,6 +23,8 @@ class AstReportGenerator {
     return {
       'generatedAt': DateTime.now().toIso8601String(),
       'analysisTool': 'static',
+      if (result.configuration.isNotEmpty)
+        'configuration': result.configuration,
       'device': null,
       'summary': {
         'filesAnalysed': result.analyzedFiles.length,
@@ -51,6 +53,12 @@ class AstReportGenerator {
       };
 
   // ── HTML ───────────────────────────────────────────────────────────────────
+
+  String _configurationSummary(Map<String, dynamic> configuration) {
+    if (configuration.isEmpty) return '';
+    final summary = const JsonEncoder.withIndent('  ').convert(configuration);
+    return '<details class="config-metadata"><summary>Custom semantics wrapper configuration</summary><pre>${_esc(summary)}</pre></details>';
+  }
 
   String _generateHtmlContent(AnalysisResult result) {
     final criticalIssues =
@@ -156,6 +164,7 @@ class AstReportGenerator {
   </div>
 
   <main>
+    ${_configurationSummary(result.configuration)}
     ${fileArticles.isEmpty ? '<p class="all-pass-global">✓ No accessibility issues found</p>' : fileArticles.join('\n')}
   </main>
 
