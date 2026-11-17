@@ -111,6 +111,9 @@ abstract class AccessibilityRule {
     return widget.visitor.isWrappedWithSemantics(widget.node);
   }
 
+  bool isWrappedWithAccessibleLabel(WidgetInfo widget) =>
+      widget.visitor.isWrappedWithAccessibleLabel(widget.node);
+
   /// Converts a camelCase icon name (e.g. 'arrowBack') to a readable label (e.g. 'Arrow back')
   static String iconNameToLabel(String iconName) {
     final spaced = iconName.replaceAllMapped(
@@ -534,6 +537,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
   final CompilationUnit compilationUnit;
   final List<WidgetInfo> widgets = [];
   final Map<AstNode, AstNode?> _parentMap = {};
+  final Map<AstNode, WidgetInfo> _widgetsByNode = {};
   final bool _enableDebugOutput;
 
   OptimizedWidgetExtractionVisitor(
@@ -683,7 +687,7 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
 
     // Only store source code snippet if needed (optimize memory usage)
     final sourceCodeSnippet = sourceCode.substring(node.offset, node.end);
-    widgets.add(WidgetInfo(
+    final widget = WidgetInfo(
       type: widgetType,
       line: location.lineNumber,
       column: location.columnNumber,
@@ -692,35 +696,80 @@ class OptimizedWidgetExtractionVisitor extends RecursiveAstVisitor<void> {
       compilationUnit: compilationUnit,
       node: node,
       visitor: this,
-    ));
+    );
+    widgets.add(widget);
+    _widgetsByNode[node] = widget;
 
     if (_enableDebugOutput) {
       print('    Added widget: $widgetType at line ${location.lineNumber}');
     }
   }
 
-  /// Optimized method to check if a widget is wrapped by a Semantics or MergeSemantics widget
+  /// Checks whether an ancestor provides meaningful semantic information.
   bool isWrappedWithSemantics(AstNode widgetNode) {
-    // Get the line info for the widget
-    final lineInfo = compilationUnit.lineInfo;
-    final widgetLocation = lineInfo.getLocation(widgetNode.offset);
-    final widgetLine = widgetLocation.lineNumber;
+    return _findAncestorWidget(widgetNode, (wrapper) {
+          if (wrapper.type == 'MergeSemantics') return true;
+          if (wrapper.type != 'Semantics' &&
+              wrapper.type != 'SliverSemantics') {
+            return false;
+          }
+          return SemanticRoleCompletenessRule._hasMeaningfulSemanticsProperties(
+              wrapper);
+        }) !=
+        null;
+  }
 
-    // Look for Semantics/MergeSemantics/SliverSemantics widgets that appear before this widget in the source
-    for (final widget in widgets) {
-      if ((widget.type == 'Semantics' || widget.type == 'MergeSemantics' ||
-              widget.type == 'SliverSemantics') &&
-          widget.line <= widgetLine) {
-        // Check if this widget appears in the container widget's child property
-        final semanticsSourceCode = widget.sourceCode;
-        final widgetSourceSnippet =
-            sourceCode.substring(widgetNode.offset, widgetNode.end);
+  bool isWrappedWithAccessibleLabel(AstNode widgetNode) {
+    return _findAncestorWidget(widgetNode, (wrapper) {
+          return (wrapper.type == 'Semantics' ||
+                  wrapper.type == 'SliverSemantics') &&
+              (_hasLabel(wrapper, 'label') ||
+                  _hasLabel(wrapper, 'attributedLabel'));
+        }) !=
+        null;
+  }
 
-        // Simple check: if the widget's source code appears within the container widget's source code
-        if (semanticsSourceCode.contains(widgetSourceSnippet)) {
-          return true;
-        }
+  bool isWrappedWithTooltip(AstNode widgetNode) =>
+      _findAncestorWidget(
+        widgetNode,
+        (wrapper) =>
+            wrapper.type == 'Tooltip' &&
+            wrapper.properties.containsKey('message'),
+      ) !=
+      null;
+
+  WidgetInfo? _findAncestorWidget(
+    AstNode widgetNode,
+    bool Function(WidgetInfo wrapper) matches,
+  ) {
+    AstNode? ancestor = widgetNode.parent;
+    while (ancestor != null) {
+      final candidate = _widgetsByNode[ancestor];
+      if (candidate != null && matches(candidate)) return candidate;
+      ancestor = ancestor.parent;
+    }
+    return null;
+  }
+
+  bool _hasLabel(WidgetInfo wrapper, String parameter) {
+    final node = wrapper.node;
+    final arguments = node is InstanceCreationExpression
+        ? node.argumentList.arguments
+        : node is MethodInvocation
+            ? node.argumentList.arguments
+            : null;
+    if (arguments == null) return false;
+    for (final argument in arguments.whereType<NamedArgument>()) {
+      if (argument.name.lexeme != parameter) continue;
+      var expression = argument.argumentExpression;
+      while (expression is ParenthesizedExpression) {
+        expression = expression.expression;
       }
+      if (expression is NullLiteral) return false;
+      if (expression is StringLiteral && expression.stringValue != null) {
+        return expression.stringValue!.trim().isNotEmpty;
+      }
+      return true;
     }
 
     return false;
@@ -1259,7 +1308,7 @@ class SemanticRoleCompletenessRule extends AccessibilityRule {
     return issues;
   }
 
-  bool _hasMeaningfulSemanticsProperties(WidgetInfo widget) {
+  static bool _hasMeaningfulSemanticsProperties(WidgetInfo widget) {
     final meaningfulProperties = [
       'label',
       'hint',
@@ -1357,7 +1406,7 @@ class ButtonLabelRule extends AccessibilityRule {
       final hasChild = widget.sourceCode.contains(RegExp(r'child:.*Text\('));
       final hasSemanticLabel = widget.properties.containsKey('semanticLabel');
       final hasTooltip = widget.properties.containsKey('tooltip');
-      final hasSemantics = isWrappedWithSemantics(widget);
+      final hasSemantics = isWrappedWithAccessibleLabel(widget);
 
       if (!hasChild && !hasSemanticLabel && !hasTooltip && !hasSemantics) {
         issues.add(AccessibilityIssue(
@@ -1543,7 +1592,8 @@ class IconButtonAccessibilityRule extends AccessibilityRule {
 
     if (widget.type == 'IconButton' &&
         !widget.properties.containsKey('tooltip') &&
-        !widget.properties.containsKey('semanticLabel')) {
+        !widget.properties.containsKey('semanticLabel') &&
+        !isWrappedWithAccessibleLabel(widget)) {
       issues.add(AccessibilityIssue(
         id: 'iconbutton-accessibility-${widget.line}',
         severity: 'critical',
@@ -1651,28 +1701,8 @@ class DisabledElementsRule extends AccessibilityRule {
     return issues;
   }
 
-  bool _isWrappedWithTooltip(WidgetInfo widget) {
-    // Check if the button is wrapped with a Tooltip widget
-    // Look for Tooltip widgets that appear before this widget in the source
-    final lineInfo = widget.visitor.compilationUnit.lineInfo;
-    final widgetLocation = lineInfo.getLocation(widget.node.offset);
-    final widgetLine = widgetLocation.lineNumber;
-
-    for (final otherWidget in widget.visitor.widgets) {
-      if (otherWidget.type == 'Tooltip' && otherWidget.line < widgetLine) {
-        // Check if this widget appears in the Tooltip widget's child property
-        final tooltipSourceCode = otherWidget.sourceCode;
-        final widgetSourceSnippet = widget.visitor.sourceCode
-            .substring(widget.node.offset, widget.node.end);
-
-        if (tooltipSourceCode.contains(widgetSourceSnippet)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
+  bool _isWrappedWithTooltip(WidgetInfo widget) =>
+      widget.visitor.isWrappedWithTooltip(widget.node);
 }
 
 class VagueTextContentRule extends AccessibilityRule {
