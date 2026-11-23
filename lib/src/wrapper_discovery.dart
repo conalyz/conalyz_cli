@@ -20,6 +20,11 @@ class WrapperCandidate {
 }
 
 class WrapperDiscovery {
+  /// Installed Dart SDK to use instead of the analyzer default, when supplied.
+  final String? sdkPath;
+
+  WrapperDiscovery({this.sdkPath});
+
   Future<List<WrapperCandidate>> discover(String projectRoot) async {
     var configRoot = p.absolute(projectRoot);
     while (!File(p.join(configRoot, '.dart_tool', 'package_config.json'))
@@ -65,7 +70,7 @@ class WrapperDiscovery {
 
     visit(p.absolute(projectRoot));
     final candidates = <WrapperCandidate>[];
-    final resolver = WrapperResolution(projectRoot);
+    final resolver = WrapperResolution(projectRoot, sdkPath: sdkPath);
     try {
       for (final root in roots) {
         final lib = Directory(p.join(root, 'lib'));

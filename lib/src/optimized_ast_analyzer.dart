@@ -137,12 +137,16 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
   int _issueIdCounter = 1;
   final bool _enableDebugOutput;
   final StaticAnalysisConfig? _configuration;
+  final String? _sdkPath;
   WrapperResolution? _wrapperResolution;
 
+  /// [sdkPath] overrides the installed Dart SDK used for wrapper resolution.
   OptimizedAstFlutterAccessibilityAnalyzer(
-      {bool enableDebugOutput = false, StaticAnalysisConfig? configuration})
+      {bool enableDebugOutput = false, StaticAnalysisConfig? configuration,
+      String? sdkPath})
       : _enableDebugOutput = enableDebugOutput,
-        _configuration = configuration {
+        _configuration = configuration,
+        _sdkPath = sdkPath {
     _initializeRules();
   }
 
@@ -209,7 +213,8 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
   Future<AnalysisResult> analyzeFile(String filePath,
       {required PlatformType platform}) async {
     if (_configuration?.registeredWrappers.isNotEmpty ?? false) {
-      _wrapperResolution = WrapperResolution(_configuration!.projectRoot);
+      _wrapperResolution = WrapperResolution(
+          _configuration!.projectRoot, sdkPath: _sdkPath);
     }
     try {
       return await _analyzeFile(filePath, platform: platform);
@@ -262,7 +267,8 @@ class OptimizedAstFlutterAccessibilityAnalyzer {
   Future<AnalysisResult> analyzeProject(String projectPath,
       {required PlatformType platform}) async {
     if (_configuration?.registeredWrappers.isNotEmpty ?? false) {
-      _wrapperResolution = WrapperResolution(_configuration!.projectRoot);
+      _wrapperResolution = WrapperResolution(
+          _configuration!.projectRoot, sdkPath: _sdkPath);
     }
     try {
       return await _analyzeProject(projectPath, platform: platform);

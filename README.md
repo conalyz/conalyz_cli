@@ -271,6 +271,28 @@ a missing file or invalid configuration fails the command.
 `conalyz.static.yaml` contains source-analysis wrapper mappings. It is separate from
 `conalyz.yaml`, which describes navigation for runtime analysis.
 
+### Supplying a Dart SDK when embedding the analyzer
+
+Library callers can pass an optional `sdkPath` to `prepareStaticAnalysis` and
+`OptimizedAstFlutterAccessibilityAnalyzer`. Pass the same installed Dart SDK root
+(the directory containing `bin`, `lib`, and `version`) to both:
+
+```dart
+final configuration = await prepareStaticAnalysis(
+  projectRoot: projectRoot,
+  sdkPath: sdkPath,
+);
+final analyzer = OptimizedAstFlutterAccessibilityAnalyzer(
+  configuration: configuration,
+  sdkPath: sdkPath,
+);
+```
+
+`WrapperDiscovery` and `WrapperReview` also accept `sdkPath` when used directly.
+SDK selection belongs to the caller; omitting this option preserves the analyzer's
+default behavior. SDK paths are local to the process and are not saved in wrapper
+configuration. A supplied custom discovery implementation manages its own resolver.
+
 ### Command Line Options
 
 **Analysis Options:**

@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Allow embedded callers to supply an optional Dart SDK path for custom semantics
+  wrapper discovery, review, and analysis. Existing callers retain default SDK behavior.
+
 ## 1.2.0
 
 ### Added
