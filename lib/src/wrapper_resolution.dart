@@ -15,10 +15,10 @@ class WrapperResolution {
   final AnalysisContextCollection _contexts;
   final String _root;
 
-  WrapperResolution(String root)
+  WrapperResolution(String root, {String? sdkPath})
       : _root = p.normalize(p.absolute(root)),
         _contexts = AnalysisContextCollection(
-            includedPaths: [p.normalize(p.absolute(root))]);
+            includedPaths: [p.normalize(p.absolute(root))], sdkPath: sdkPath);
 
   Future<ResolvedUnitResult?> resolve(String file) async {
     final absolute = p.normalize(p.absolute(file));

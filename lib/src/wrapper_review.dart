@@ -15,8 +15,10 @@ typedef WrapperApproval = Future<bool> Function(
 class WrapperReview {
   final WrapperDiscovery discovery;
   final DateTime Function() now;
-  WrapperReview({WrapperDiscovery? discovery, DateTime Function()? now})
-      : discovery = discovery ?? WrapperDiscovery(),
+  /// [sdkPath] applies to the default discovery; injected discovery owns its SDK.
+  WrapperReview({WrapperDiscovery? discovery, DateTime Function()? now,
+    String? sdkPath})
+      : discovery = discovery ?? WrapperDiscovery(sdkPath: sdkPath),
         now = now ?? DateTime.now;
 
   Future<StaticAnalysisConfig?> prepare({
@@ -155,9 +157,10 @@ class WrapperReview {
 }
 
 /// Shared terminal adapter for standalone and unified static analysis entrypoints.
+/// [sdkPath] optionally selects the installed Dart SDK for wrapper discovery.
 Future<StaticAnalysisConfig?> prepareStaticAnalysis(
-        {required String projectRoot, String? configPath}) =>
-    WrapperReview().prepare(
+        {required String projectRoot, String? configPath, String? sdkPath}) =>
+    WrapperReview(sdkPath: sdkPath).prepare(
       projectRoot: projectRoot,
       configPath: configPath,
       interactive: stdin.hasTerminal &&
